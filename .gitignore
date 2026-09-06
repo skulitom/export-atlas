@@ -1,0 +1,7 @@
+node_modules/
+# Cached API responses and the 3 MB Natural Earth download. Regenerate with
+# tools/fetch-trade.js; data/geo.json and data/trade.json are the committed
+# outputs and are all the build actually needs.
+build/
+# Publishing intermediate; `node build.js` regenerates it from src/app.html.
+artifact.html

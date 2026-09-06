@@ -1,0 +1,3 @@
+# Normalise to LF everywhere so the CI check that `node build.js` reproduces
+# index.html byte-for-byte works the same on Windows and Linux.
+* text=auto eol=lf

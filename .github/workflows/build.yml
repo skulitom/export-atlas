@@ -1,0 +1,21 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      # build.js fails on unknown ISO codes, duplicate entries, or a market
+      # whose listed exporters exceed its stated world total.
+      - name: Build and validate
+        run: node build.js
+      - name: index.html must match src/
+        run: git diff --exit-code -- index.html

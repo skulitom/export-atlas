@@ -1,0 +1,906 @@
+<title>Export Atlas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* ==========================================================================
+   Export Atlas — a deliberately single-theme dark page. The whole chrome is
+   desaturated ink-blue so the one saturated thing on screen is the commodity
+   itself: every market floods the map with its own signature hue.
+   ========================================================================== */
+:root {
+  --abyss:      #070a0f;
+  --sea:        #0a0f16;
+  --sea-line:   #131b25;
+  --land:       #1a222d;
+  --land-edge:  #2b3542;
+  --surface:    #0c121a;
+  --surface-2:  #121a24;
+  --rule:       #1c2632;
+  --ink:        #b6c2d0;
+  --ink-dim:    #6c7b8d;
+  --ink-faint:  #4a5766;
+  --ink-bright: #e9eff6;
+  --mk:         #b5713a;          /* current market hue, set from JS */
+  --mk-soft:    #b5713a33;
+
+  --font-display: 'Fraunces', 'Iowan Old Style', 'Palatino Linotype', Georgia, serif;
+  --font-ui: 'IBM Plex Sans', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Consolas, monospace;
+
+  --rail-l: 250px;
+  --rail-r: 356px;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--abyss);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+:focus-visible { outline: 2px solid var(--mk); outline-offset: 2px; border-radius: 2px; }
+
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+.num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+
+/* ---- shell --------------------------------------------------------------- */
+.app {
+  display: grid;
+  grid-template-columns: var(--rail-l) minmax(0, 1fr) var(--rail-r);
+  grid-template-rows: auto minmax(0, 1fr);
+  height: 100vh;
+  height: 100dvh;
+  min-height: 560px;
+}
+
+.masthead {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: baseline;
+  gap: 18px;
+  padding: 13px 20px 12px;
+  border-bottom: 1px solid var(--rule);
+  background: var(--surface);
+}
+.wordmark {
+  font-family: var(--font-display);
+  font-optical-sizing: auto;
+  font-weight: 600;
+  font-size: 22px;
+  letter-spacing: -.015em;
+  color: var(--ink-bright);
+  margin: 0;
+  white-space: nowrap;
+}
+.wordmark em { font-style: normal; color: var(--mk); transition: color .4s ease; }
+.dek { color: var(--ink-dim); font-size: 12.5px; margin: 0; }
+.masthead .spacer { flex: 1; }
+
+/* ---- search -------------------------------------------------------------- */
+.search { position: relative; width: 210px; flex: none; }
+.search input {
+  width: 100%;
+  padding: 6px 10px;
+  font: 400 12.5px var(--font-ui);
+  color: var(--ink-bright);
+  background: var(--surface-2);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+}
+.search input::placeholder { color: var(--ink-faint); }
+.search input:focus { outline: none; border-color: var(--mk); }
+.suggest {
+  position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 40;
+  background: var(--surface-2);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  max-height: 260px; overflow-y: auto;
+  box-shadow: 0 12px 28px #000a;
+}
+.suggest button {
+  display: flex; justify-content: space-between; gap: 8px;
+  width: 100%; padding: 6px 10px; text-align: left; font-size: 12.5px;
+}
+.suggest button:hover, .suggest button[data-on] { background: var(--mk-soft); color: var(--ink-bright); }
+.suggest .iso { color: var(--ink-faint); }
+
+/* ---- market rail --------------------------------------------------------- */
+.rail { overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--rule) transparent; }
+.rail::-webkit-scrollbar { width: 8px; }
+.rail::-webkit-scrollbar-thumb { background: var(--rule); border-radius: 4px; }
+
+.markets {
+  border-right: 1px solid var(--rule);
+  background: var(--surface);
+  padding: 12px 0 20px;
+}
+.markets > .eyebrow { padding: 0 16px 8px; display: block; }
+
+.mkt {
+  display: grid;
+  grid-template-columns: 9px 1fr auto;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 7px 16px;
+  text-align: left;
+  border-left: 2px solid transparent;
+  transition: background .15s ease;
+}
+.mkt:hover { background: #ffffff08; }
+.mkt .dot {
+  width: 9px; height: 9px; border-radius: 50%;
+  background: var(--c);
+  box-shadow: 0 0 0 0 var(--c);
+  transition: box-shadow .25s ease;
+}
+.mkt .nm { font-size: 13px; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mkt .sz { font-family: var(--font-mono); font-size: 10.5px; color: var(--ink-faint); font-variant-numeric: tabular-nums; }
+.mkt[aria-pressed="true"] {
+  background: #ffffff0d;
+  border-left-color: var(--c);
+}
+.mkt[aria-pressed="true"] .nm { color: var(--ink-bright); font-weight: 500; }
+.mkt[aria-pressed="true"] .dot { box-shadow: 0 0 12px 1px var(--c); }
+.mkt[aria-pressed="true"] .sz { color: var(--ink-dim); }
+
+/* ---- map stage ----------------------------------------------------------- */
+.stage {
+  position: relative;
+  background: var(--sea);
+  overflow: hidden;
+  touch-action: none;
+}
+#map { position: absolute; inset: 0; width: 100%; height: 100%; display: block; cursor: grab; }
+#map.dragging { cursor: grabbing; }
+
+.grat { fill: none; stroke: var(--sea-line); stroke-width: 1; vector-effect: non-scaling-stroke; }
+
+.land {
+  fill: var(--land);
+  stroke: var(--land-edge);
+  stroke-width: .6;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+  transition: fill .45s cubic-bezier(.4, 0, .2, 1), stroke .45s cubic-bezier(.4, 0, .2, 1);
+}
+.land.rk { cursor: pointer; }
+
+/* Every emphasis on the map is drawn on a country's own border, so nothing is
+   ever laid over the map surface itself. */
+#leadline, #hoverline, #selline { fill: none; pointer-events: none; vector-effect: non-scaling-stroke; stroke-linejoin: round; }
+#leadline { stroke-width: 1.7; opacity: .9; transition: stroke .45s ease; }
+#hoverline { stroke: var(--ink-bright); stroke-width: 1.4; opacity: .85; }
+#selline { stroke: var(--ink-bright); stroke-width: 2; filter: drop-shadow(0 0 4px #000); }
+
+/* map overlays */
+.legend, .zoomctl { position: absolute; z-index: 5; }
+.legend {
+  left: 16px; bottom: 16px;
+  background: #070a0fd9;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: 9px 11px 8px;
+  backdrop-filter: blur(6px);
+  width: 208px;
+}
+.legend .eyebrow { display: block; margin-bottom: 6px; }
+.legend .bar { height: 9px; border-radius: 2px; border: 1px solid #ffffff14; }
+.legend .ticks {
+  display: flex; justify-content: space-between;
+  font-family: var(--font-mono); font-size: 9.5px; color: var(--ink-faint);
+  margin-top: 4px; font-variant-numeric: tabular-nums;
+}
+.legend .key { display: flex; align-items: center; gap: 6px; margin-top: 7px; font-size: 10.5px; color: var(--ink-faint); }
+.legend .key i { width: 11px; height: 11px; border-radius: 2px; background: var(--land); border: 1px solid var(--land-edge); flex: none; }
+
+.zoomctl { right: 16px; bottom: 16px; display: flex; flex-direction: column; gap: 5px; }
+.zoomctl button {
+  width: 30px; height: 30px;
+  display: grid; place-items: center;
+  background: #070a0fd9;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  color: var(--ink-dim);
+  font-size: 15px;
+  backdrop-filter: blur(6px);
+}
+.zoomctl button:hover { color: var(--ink-bright); border-color: var(--ink-faint); }
+.zoomctl button.rst { font-size: 10px; font-family: var(--font-mono); letter-spacing: .04em; }
+
+.tip {
+  position: absolute; z-index: 10; pointer-events: none;
+  background: #070a0feb;
+  border: 1px solid var(--rule);
+  border-left: 2px solid var(--mk);
+  border-radius: 3px;
+  padding: 6px 9px;
+  font-size: 12px;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity .12s ease;
+  box-shadow: 0 8px 22px #000c;
+}
+.tip[data-on] { opacity: 1; }
+.tip b { color: var(--ink-bright); font-weight: 500; }
+.tip .r { color: var(--mk); font-family: var(--font-mono); font-size: 11px; }
+.tip .v { color: var(--ink-dim); font-family: var(--font-mono); font-size: 11px; }
+
+/* ---- reading panel ------------------------------------------------------- */
+.panel {
+  border-left: 1px solid var(--rule);
+  background: var(--surface);
+  display: flex; flex-direction: column;
+}
+.panel > * { flex: none; }
+.pscroll { flex: 1; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--rule) transparent; }
+.pscroll::-webkit-scrollbar { width: 8px; }
+.pscroll::-webkit-scrollbar-thumb { background: var(--rule); border-radius: 4px; }
+
+.phead { padding: 16px 18px 14px; border-bottom: 1px solid var(--rule); }
+.phead h2 {
+  font-family: var(--font-display); font-optical-sizing: auto;
+  font-weight: 600; font-size: 27px; line-height: 1.1; letter-spacing: -.02em;
+  color: var(--ink-bright); margin: 6px 0 0; text-wrap: balance;
+}
+.phead .blurb { margin: 10px 0 0; font-size: 12.8px; line-height: 1.62; color: var(--ink); }
+.phead .hubnote { margin: 9px 0 0; font-size: 11.5px; line-height: 1.5; color: var(--ink-dim); }
+.phead .hubnote b { color: var(--ink); font-weight: 500; }
+
+.stats { display: flex; gap: 0; margin: 13px 0 0; border-top: 1px solid var(--rule); }
+.stats div { flex: 1; padding: 9px 10px 0 0; }
+.stats div + div { padding-left: 12px; border-left: 1px solid var(--rule); }
+.stats .k { display: block; }
+.stats .v {
+  font-family: var(--font-mono); font-size: 15px; color: var(--ink-bright);
+  font-variant-numeric: tabular-nums; display: block; margin-top: 3px;
+}
+.stats .v.hue { color: var(--mk); }
+.stats .v.nm { font-family: var(--font-ui); font-size: 13.5px; }
+
+/* leaderboard */
+.board { padding: 12px 0 24px; }
+.board > .eyebrow { display: block; padding: 0 18px 7px; }
+.row {
+  position: relative;
+  display: grid;
+  grid-template-columns: 20px 1fr auto auto;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 5px 18px;
+  text-align: left;
+  isolation: isolate;
+}
+.row .fill {
+  position: absolute; left: 0; top: 1px; bottom: 1px; z-index: -1;
+  background: var(--mk); opacity: .13;
+  transition: width .45s cubic-bezier(.4,0,.2,1), opacity .2s ease;
+}
+.row:hover .fill { opacity: .24; }
+.row[data-sel] .fill { opacity: .32; }
+.row .rk { font-family: var(--font-mono); font-size: 10.5px; color: var(--ink-faint); text-align: right; }
+.row .cn { font-size: 12.8px; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.row .vl { font-family: var(--font-mono); font-size: 11.5px; color: var(--ink-dim); font-variant-numeric: tabular-nums; }
+.row .sh { font-family: var(--font-mono); font-size: 11.5px; color: var(--ink-bright); font-variant-numeric: tabular-nums; width: 44px; text-align: right; }
+.row:hover .cn, .row[data-sel] .cn { color: var(--ink-bright); }
+.row[data-sel] .rk { color: var(--mk); }
+.row .hub {
+  font-family: var(--font-mono); font-size: 8.5px; letter-spacing: .08em;
+  color: var(--ink-faint); border: 1px solid var(--rule); border-radius: 2px;
+  padding: 0 3px; margin-left: 5px; vertical-align: 1px;
+}
+
+/* country dossier */
+.dossier { padding: 16px 18px 14px; border-bottom: 1px solid var(--rule); }
+.dossier .top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.dossier h2 {
+  font-family: var(--font-display); font-optical-sizing: auto;
+  font-weight: 600; font-size: 25px; line-height: 1.08; letter-spacing: -.02em;
+  color: var(--ink-bright); margin: 5px 0 0; text-wrap: balance;
+}
+.dossier .close {
+  font-family: var(--font-mono); font-size: 11px; color: var(--ink-faint);
+  border: 1px solid var(--rule); border-radius: 3px; padding: 2px 7px; flex: none; margin-top: 4px;
+}
+.dossier .close:hover { color: var(--ink-bright); border-color: var(--ink-faint); }
+.dossier .where { margin: 5px 0 0; font-size: 11.5px; color: var(--ink-dim); }
+.dossier .note { margin: 11px 0 0; font-size: 12.8px; line-height: 1.6; color: var(--ink); }
+.dossier .absent { margin: 12px 0 0; font-size: 12.5px; line-height: 1.55; color: var(--ink-dim); }
+.hubflag {
+  display: inline-flex; align-items: center; gap: 5px; margin-top: 11px;
+  font-size: 11px; color: var(--ink-dim);
+  border: 1px solid var(--rule); border-radius: 3px; padding: 3px 8px;
+}
+.hubflag b { color: var(--ink); font-weight: 500; }
+.hubflag.est { border-style: dashed; }
+.row .hub.est { color: var(--ink-dim); border-style: dashed; }
+.phead .caveat {
+  margin: 9px 0 0; font-size: 11.5px; line-height: 1.5; color: var(--ink-dim);
+  border-left: 2px solid var(--rule); padding-left: 9px;
+}
+
+.cross { padding: 13px 18px 26px; }
+.cross > .eyebrow { display: block; margin-bottom: 9px; }
+.cross ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 1px; }
+.cross button {
+  display: grid; grid-template-columns: 9px 1fr auto; align-items: center; gap: 9px;
+  width: 100%; padding: 5px 6px; text-align: left; border-radius: 3px;
+}
+.cross button:hover { background: #ffffff0a; }
+.cross button:hover .cm { color: var(--ink-bright); }
+.cross .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--c); }
+.cross .cm { font-size: 12.5px; color: var(--ink); }
+.cross .cr { font-family: var(--font-mono); font-size: 11px; color: var(--ink-faint); font-variant-numeric: tabular-nums; }
+.cross .cr b { color: var(--c); font-weight: 500; }
+.cross .none { font-size: 12.5px; color: var(--ink-dim); margin: 0; }
+
+.foot {
+  padding: 11px 18px 13px;
+  border-top: 1px solid var(--rule);
+  font-size: 10.5px; line-height: 1.5; color: var(--ink-faint);
+  background: var(--abyss);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition-duration: .001ms !important; animation-duration: .001ms !important; }
+}
+
+/* ---- narrow screens ------------------------------------------------------ */
+@media (max-width: 1080px) {
+  .app {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto minmax(340px, 52vh) auto;
+    height: auto;
+    min-height: 100dvh;
+  }
+  .masthead { flex-wrap: wrap; gap: 10px 16px; }
+  .search { width: 100%; }
+  .markets {
+    display: flex; gap: 0; overflow-x: auto; overflow-y: hidden;
+    border-right: 0; border-bottom: 1px solid var(--rule); padding: 0;
+  }
+  .markets > .eyebrow { display: none; }
+  .mkt {
+    width: auto; flex: none; grid-template-columns: 9px auto;
+    border-left: 0; border-bottom: 2px solid transparent; padding: 9px 14px;
+  }
+  .mkt .sz { display: none; }
+  .mkt[aria-pressed="true"] { border-bottom-color: var(--c); }
+  .panel { border-left: 0; border-top: 1px solid var(--rule); }
+  .pscroll { overflow-y: visible; }
+}
+</style>
+
+<div class="app">
+  <header class="masthead">
+    <h1 class="wordmark">Export&nbsp;<em>Atlas</em></h1>
+    <p class="dek">Twenty markets, and who the world buys them from.</p>
+    <div class="spacer"></div>
+    <div class="search">
+      <input id="q" type="search" autocomplete="off" spellcheck="false" placeholder="Find a country…" aria-label="Find a country">
+      <div class="suggest" id="sug" hidden></div>
+    </div>
+  </header>
+
+  <nav class="rail markets" id="markets" aria-label="Markets">
+    <span class="eyebrow">Markets</span>
+  </nav>
+
+  <div class="stage" id="stage">
+    <svg id="map" aria-label="World map shaded by share of exports"></svg>
+
+    <div class="legend">
+      <span class="eyebrow" id="legTitle">Share of world exports</span>
+      <div class="bar" id="legBar"></div>
+      <div class="ticks"><span id="legLo">0%</span><span id="legMid"></span><span id="legHi"></span></div>
+      <div class="key"><i></i> no recorded exports</div>
+    </div>
+
+    <div class="zoomctl">
+      <button id="zin" title="Zoom in" aria-label="Zoom in">+</button>
+      <button id="zout" title="Zoom out" aria-label="Zoom out">−</button>
+      <button id="zrst" class="rst" title="Reset view" aria-label="Reset view">RST</button>
+    </div>
+
+    <div class="tip" id="tip"></div>
+  </div>
+
+  <aside class="panel">
+    <div class="pscroll">
+      <div id="head"></div>
+      <div class="board" id="board"></div>
+    </div>
+    <p class="foot" id="foot"></p>
+  </aside>
+</div>
+
+<script>
+/* eslint-disable */
+const GEO = JSON.parse(__GEO__);
+const MARKETS = JSON.parse(__MARKETS__);
+const META = JSON.parse(__META__);
+const RENAME = {
+  USA: 'United States', CIV: "Côte d'Ivoire", COD: 'DR Congo',
+  COG: 'Congo-Brazzaville', CZE: 'Czechia', GBR: 'United Kingdom',
+  ARE: 'United Arab Emirates', FRO: 'Faroe Islands', LAO: 'Laos'
+};
+
+const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const $ = (s) => document.querySelector(s);
+const SVGNS = 'http://www.w3.org/2000/svg';
+const el = (n, a) => { const e = document.createElementNS(SVGNS, n); for (const k in a) e.setAttribute(k, a[k]); return e; };
+
+/* ---- geometry ------------------------------------------------------------ */
+// Stored coordinates are Natural Earth I projection units x 10000. SVG y runs
+// downward, so every y is negated as the path strings are built.
+const CO = {};          // iso -> country record
+let VB = { x: 0, y: 0, w: 0, h: 0 };
+
+(function prepare() {
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+  for (const c of GEO) {
+    let d = '', bx0 = Infinity, by0 = Infinity, bx1 = -Infinity, by1 = -Infinity;
+    for (const ring of c.shapes) {
+      for (let i = 0; i < ring.length; i++) {
+        const px = ring[i][0], py = -ring[i][1];
+        d += (i === 0 ? 'M' : i === 1 ? 'L' : ' ') + px + ' ' + py;
+        if (px < bx0) bx0 = px; if (px > bx1) bx1 = px;
+        if (py < by0) by0 = py; if (py > by1) by1 = py;
+      }
+      d += 'Z';
+    }
+    if (bx0 < x0) x0 = bx0; if (bx1 > x1) x1 = bx1;
+    if (by0 < y0) y0 = by0; if (by1 > y1) y1 = by1;
+    CO[c.id] = {
+      id: c.id, name: RENAME[c.id] || c.name, region: c.region, tiny: !!c.tiny,
+      d, cx: c.cx, cy: -c.cy, bb: [bx0, by0, bx1, by1]
+    };
+  }
+  const padX = (x1 - x0) * 0.012, padY = (y1 - y0) * 0.03;
+  VB = { x: x0 - padX, y: y0 - padY, w: (x1 - x0) + padX * 2, h: (y1 - y0) + padY * 2 };
+})();
+
+/* ---- colour -------------------------------------------------------------- */
+const hex2rgb = (h) => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
+const LAND = hex2rgb(getComputedStyle(document.documentElement).getPropertyValue('--land').trim() || '#1a222d');
+
+// Mix in linear light so the mid-tones stay saturated instead of going muddy.
+function ramp(rgb, t) {
+  const out = [];
+  for (let i = 0; i < 3; i++) {
+    const a = Math.pow(LAND[i] / 255, 2.2), b = Math.pow(rgb[i] / 255, 2.2);
+    let v = Math.pow(a + (b - a) * t, 1 / 2.2) * 255;
+    if (t > 0.86) v += (t - 0.86) * 150 * (1 - v / 255);   // lift the very top so #1 reads brightest
+    out.push(Math.round(Math.min(255, v)));
+  }
+  return 'rgb(' + out.join(',') + ')';
+}
+const lighten = (rgb, a) => 'rgb(' + rgb.map(v => Math.round(v + (255 - v) * a)).join(',') + ')';
+
+// Share is heavily skewed in most markets, so flatten it before it hits colour.
+const shade = (v, vmax) => 0.14 + 0.86 * Math.pow(v / vmax, 0.42);
+
+const fmtVal = (v) => v >= 100 ? '$' + Math.round(v) + 'bn'
+  : v >= 10 ? '$' + v.toFixed(0) + 'bn'
+  : v >= 1 ? '$' + v.toFixed(1) + 'bn'
+  : '$' + Math.round(v * 1000) + 'm';
+const fmtPct = (p) => p >= 10 ? p.toFixed(0) + '%' : p >= 1 ? p.toFixed(1) + '%' : p.toFixed(2) + '%';
+
+/* ---- market index -------------------------------------------------------- */
+// Precompute rank, share and colour position for every country in every market.
+for (const m of MARKETS) {
+  m.rgb = hex2rgb(m.color);
+  m.hub = new Set(m.hubs || []);
+  m.rows = m.exporters
+    .map(([iso, v, note, mirror]) => ({ iso, v, note, mirror: !!mirror }))
+    .sort((a, b) => b.v - a.v);
+  const vmax = m.rows[0].v;
+  m.vmax = vmax;
+  m.by = {};
+  m.rows.forEach((r, i) => {
+    r.rank = i + 1;
+    r.share = 100 * r.v / m.total;
+    r.fill = ramp(m.rgb, shade(r.v, vmax));
+    r.barPct = 100 * r.v / vmax;
+    m.by[r.iso] = r;
+  });
+  m.top3 = m.rows.slice(0, 3).reduce((s, r) => s + r.share, 0);
+}
+// Which markets does each country appear in? Powers the country dossier.
+const APPEARS = {};
+for (const m of MARKETS) for (const r of m.rows) (APPEARS[r.iso] ||= []).push({ m, r });
+for (const iso in APPEARS) APPEARS[iso].sort((a, b) => a.r.rank - b.r.rank || b.r.share - a.r.share);
+
+/* ---- build the map ------------------------------------------------------- */
+const svg = $('#map');
+svg.setAttribute('viewBox', `${VB.x} ${VB.y} ${VB.w} ${VB.h}`);
+svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+
+const vp = el('g', { id: 'vp' });
+const gGrat = el('g', { class: 'grat' });
+const gLand = el('g');
+const leadline = el('path', { id: 'leadline' });
+const hoverline = el('path', { id: 'hoverline' });
+const selline = el('path', { id: 'selline' });
+
+// Graticule every 30 degrees, drawn from the same projection as the coastlines.
+(function graticule() {
+  const RAD = Math.PI / 180;
+  const proj = (lon, lat) => {
+    const lam = lon * RAD, phi = lat * RAD, p2 = phi * phi, p4 = p2 * p2;
+    return [
+      1e4 * lam * (0.8707 - 0.131979 * p2 + p4 * (-0.013791 + p4 * (0.003971 * p2 - 0.001529 * p4))),
+      -1e4 * phi * (1.007226 + p2 * (0.015085 + p4 * (-0.044475 + 0.028874 * p2 - 0.005916 * p4)))
+    ];
+  };
+  const clip = (pts) => pts.filter(p => p[1] >= VB.y && p[1] <= VB.y + VB.h);
+  for (let lon = -180; lon <= 180; lon += 30) {
+    const pts = clip(Array.from({ length: 61 }, (_, i) => proj(lon, -90 + i * 3)));
+    if (pts.length > 1) gGrat.appendChild(el('path', { d: 'M' + pts.map(p => p[0].toFixed(0) + ' ' + p[1].toFixed(0)).join('L') }));
+  }
+  for (let lat = -60; lat <= 60; lat += 30) {
+    const pts = clip(Array.from({ length: 121 }, (_, i) => proj(-180 + i * 3, lat)));
+    if (pts.length > 1) gGrat.appendChild(el('path', { d: 'M' + pts.map(p => p[0].toFixed(0) + ' ' + p[1].toFixed(0)).join('L') }));
+  }
+})();
+
+const paths = {};
+for (const id in CO) {
+  const p = el('path', { class: 'land', d: CO[id].d, 'data-iso': id });
+  paths[id] = p;
+  gLand.appendChild(p);
+}
+vp.append(gGrat, gLand, leadline, hoverline, selline);
+svg.appendChild(vp);
+
+/* ---- pan & zoom ---------------------------------------------------------- */
+let k = 1, tx = 0, ty = 0;
+const KMIN = 1, KMAX = 45;
+
+function clampPan() {
+  const lo = (VB.x + VB.w) * (1 - k), hi = VB.x * (1 - k);
+  tx = Math.min(hi, Math.max(lo, tx));
+  const loy = (VB.y + VB.h) * (1 - k), hiy = VB.y * (1 - k);
+  ty = Math.min(hiy, Math.max(loy, ty));
+}
+function apply() {
+  clampPan();
+  vp.setAttribute('transform', `translate(${tx.toFixed(1)} ${ty.toFixed(1)}) scale(${k.toFixed(4)})`);
+}
+function toVB(ev) {
+  const m = svg.getScreenCTM().inverse();
+  const p = new DOMPoint(ev.clientX, ev.clientY).matrixTransform(m);
+  return { x: p.x, y: p.y };
+}
+function zoomAt(px, py, k2) {
+  k2 = Math.min(KMAX, Math.max(KMIN, k2));
+  tx = px - (px - tx) * (k2 / k);
+  ty = py - (py - ty) * (k2 / k);
+  k = k2;
+  apply();
+}
+
+svg.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  const p = toVB(e);
+  zoomAt(p.x, p.y, k * Math.exp(-e.deltaY * (e.deltaMode === 1 ? 0.05 : 0.0016)));
+}, { passive: false });
+
+const ptrs = new Map();
+let pinch = 0, moved = 0;
+svg.addEventListener('pointerdown', (e) => {
+  svg.setPointerCapture(e.pointerId);
+  ptrs.set(e.pointerId, toVB(e));
+  moved = 0;
+  if (ptrs.size === 2) { const [a, b] = [...ptrs.values()]; pinch = Math.hypot(a.x - b.x, a.y - b.y); }
+  svg.classList.add('dragging');
+});
+svg.addEventListener('pointermove', (e) => {
+  if (!ptrs.has(e.pointerId)) { showTip(e); return; }
+  const now = toVB(e), prev = ptrs.get(e.pointerId);
+  if (ptrs.size === 2) {
+    ptrs.set(e.pointerId, now);
+    const [a, b] = [...ptrs.values()];
+    const dist = Math.hypot(a.x - b.x, a.y - b.y);
+    if (pinch > 0 && dist > 0) zoomAt((a.x + b.x) / 2, (a.y + b.y) / 2, k * (pinch / dist));
+    pinch = dist;
+    return;
+  }
+  moved += Math.abs(now.x - prev.x) + Math.abs(now.y - prev.y);
+  tx += now.x - prev.x;
+  ty += now.y - prev.y;
+  apply();
+  ptrs.set(e.pointerId, now);
+});
+function endPtr(e) {
+  ptrs.delete(e.pointerId);
+  if (ptrs.size < 2) pinch = 0;
+  if (!ptrs.size) svg.classList.remove('dragging');
+}
+svg.addEventListener('pointerup', endPtr);
+svg.addEventListener('pointercancel', endPtr);
+svg.addEventListener('pointerleave', () => hideTip());
+
+$('#zin').onclick = () => zoomAt(VB.x + VB.w / 2, VB.y + VB.h / 2, k * 1.6);
+$('#zout').onclick = () => zoomAt(VB.x + VB.w / 2, VB.y + VB.h / 2, k / 1.6);
+$('#zrst').onclick = () => flyTo(VB.x + VB.w / 2, VB.y + VB.h / 2, 1);
+
+let anim = 0;
+function flyTo(cx, cy, k2) {
+  cancelAnimationFrame(anim);
+  k2 = Math.min(KMAX, Math.max(KMIN, k2));
+  const tx2 = VB.x + VB.w / 2 - cx * k2, ty2 = VB.y + VB.h / 2 - cy * k2;
+  if (REDUCED) { k = k2; tx = tx2; ty = ty2; apply(); return; }
+  const k0 = k, x0 = tx, y0 = ty, t0 = performance.now(), dur = 620;
+  (function step(now) {
+    const u = Math.min(1, (now - t0) / dur);
+    const e = u < .5 ? 4 * u * u * u : 1 - Math.pow(-2 * u + 2, 3) / 2;
+    k = k0 + (k2 - k0) * e; tx = x0 + (tx2 - x0) * e; ty = y0 + (ty2 - y0) * e;
+    apply();
+    if (u < 1) anim = requestAnimationFrame(step);
+  })(t0);
+}
+function flyToCountry(iso) {
+  const c = CO[iso]; if (!c) return;
+  const [bx0, by0, bx1, by1] = c.bb;
+  const w = Math.max(bx1 - bx0, VB.w * 0.012), h = Math.max(by1 - by0, VB.h * 0.012);
+  flyTo((bx0 + bx1) / 2, (by0 + by1) / 2, Math.min(14, Math.max(1.7, Math.min(VB.w / (w * 2.4), VB.h / (h * 2.4)))));
+}
+
+/* ---- state --------------------------------------------------------------- */
+let market = MARKETS[0];
+let selected = null;
+
+function setMarket(m, keepView) {
+  market = m;
+  document.documentElement.style.setProperty('--mk', m.color);
+  document.documentElement.style.setProperty('--mk-soft', m.color + '33');
+  paintMap();
+  paintLegend();
+  paintPanel();
+  for (const b of $('#markets').querySelectorAll('.mkt')) b.setAttribute('aria-pressed', String(b.dataset.id === m.id));
+  if (!keepView) hideTip();
+}
+
+function paintMap() {
+  for (const id in paths) {
+    const p = paths[id], r = market.by[id], c = CO[id];
+    // Flood outward from the top exporter — a short, ranked stagger.
+    p.style.transitionDelay = (!REDUCED && r && r.rank <= 14) ? (r.rank - 1) * 16 + 'ms' : '0ms';
+    p.style.fill = r ? r.fill : '';
+    // A micro-state is sub-pixel at world zoom, so it gets a stroke in its own
+    // fill colour: that fattens the country itself instead of dropping a
+    // marker over the map.
+    const micro = r && c.tiny;
+    p.style.stroke = micro ? r.fill : '';
+    p.style.strokeWidth = micro ? '3.2' : '';
+    p.classList.toggle('rk', !!r);
+  }
+  // The top three are marked by a bright rim on their own coastline.
+  leadline.setAttribute('d', market.rows.slice(0, 3).map(r => (CO[r.iso] || {}).d || '').join(''));
+  leadline.style.stroke = lighten(market.rgb, 0.58);
+}
+
+function paintLegend() {
+  const stops = [];
+  for (let i = 0; i <= 20; i++) {
+    const v = market.vmax * (i / 20);
+    stops.push(ramp(market.rgb, i === 0 ? 0 : shade(v, market.vmax)) + ' ' + (i * 5) + '%');
+  }
+  $('#legBar').style.background = 'linear-gradient(90deg,' + stops.join(',') + ')';
+  const maxShare = 100 * market.vmax / market.total;
+  $('#legMid').textContent = fmtPct(maxShare / 2);
+  $('#legHi').textContent = fmtPct(maxShare);
+}
+
+/* ---- panel --------------------------------------------------------------- */
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+function paintPanel() {
+  const head = $('#head');
+  if (selected) head.innerHTML = dossierHTML(selected);
+  else head.innerHTML = marketHeadHTML();
+  paintBoard();
+  $('#foot').innerHTML = 'Reported goods exports to the world, ' + esc(META.year) + ', from ' + esc(META.source) +
+    ' (retrieved ' + esc(META.fetched) + '). Countries shown cover ' + market.covered + '% of the world total for this market; ' +
+    'the rest is a long tail of small exporters. Boundaries from Natural Earth.';
+  wirePanel();
+}
+
+function marketHeadHTML() {
+  const m = market, top = m.rows[0];
+  const hubs = (m.hubs || []).map(h => (CO[h] || {}).name || h);
+  return `<div class="phead">
+    <span class="eyebrow">${esc(m.hs)} · ${esc(m.unit)} · ${esc(m.year)} · ${m.reporters} reporting countries</span>
+    <h2>${esc(m.name)}</h2>
+    <p class="blurb">${esc(m.blurb)}</p>
+    ${hubs.length ? `<p class="hubnote"><b>Trades, not grows:</b> ${esc(hubs.join(', '))} rank here as re-exporters, refiners or processors rather than producers.</p>` : ''}
+    ${m.caveat ? `<p class="caveat">${esc(m.caveat)}</p>` : ''}
+    ${m.rows.some(r => r.mirror) ? `<p class="hubnote"><b>EST</b> marks a mirror estimate: ${esc(m.rows.filter(r => r.mirror).map(r => (CO[r.iso] || {}).name || r.iso).join(', '))} file no trade data of their own, so the figure is what the rest of the world reports importing from them.</p>` : ''}
+    <div class="stats">
+      <div><span class="eyebrow k">World exports</span><span class="v">${fmtVal(m.total)}</span></div>
+      <div><span class="eyebrow k">Leader</span><span class="v nm hue">${esc(CO[top.iso] ? CO[top.iso].name : top.iso)}</span></div>
+      <div><span class="eyebrow k">Top 3 hold</span><span class="v">${fmtPct(m.top3)}</span></div>
+    </div>
+  </div>`;
+}
+
+function dossierHTML(iso) {
+  const c = CO[iso], m = market, r = m.by[iso];
+  const others = (APPEARS[iso] || []).filter(a => a.m !== m).slice(0, 8);
+  const isHub = r && m.hub.has(iso);
+  return `<div class="dossier">
+    <div class="top">
+      <div>
+        <span class="eyebrow">${esc(c.region)} · <span class="num">${esc(iso)}</span></span>
+        <h2>${esc(c.name)}</h2>
+      </div>
+      <button class="close" id="deselect" aria-label="Clear selection">ESC</button>
+    </div>
+    ${r ? `<p class="where">Rank <b class="num">#${r.rank}</b> of ${m.rows.length} listed exporters of ${esc(m.name.toLowerCase())}</p>
+    <div class="stats">
+      <div><span class="eyebrow k">Exports</span><span class="v">${fmtVal(r.v)}</span></div>
+      <div><span class="eyebrow k">World share</span><span class="v hue">${fmtPct(r.share)}</span></div>
+      <div><span class="eyebrow k">Vs. leader</span><span class="v">${r.rank === 1 ? '—' : (r.v / m.vmax).toFixed(2) + '×'}</span></div>
+    </div>
+    ${isHub ? `<div class="hubflag"><b>Re-export hub</b> — moves ${esc(m.name.toLowerCase())} it does not produce</div>` : ''}
+    ${r.mirror ? `<div class="hubflag est"><b>Mirror estimate</b> — files no trade data, so this is what its customers report importing</div>` : ''}
+    ${r.note ? `<p class="note">${esc(r.note)}</p>` : ''}`
+    : `<p class="absent">No recorded exports of ${esc(m.name.toLowerCase())}.</p>`}
+  </div>
+  <div class="cross">
+    <span class="eyebrow">Across the atlas</span>
+    ${others.length ? `<ul>${others.map(a => `<li><button data-mkt="${esc(a.m.id)}" style="--c:${esc(a.m.color)}">
+        <span class="dot"></span>
+        <span class="cm">${esc(a.m.name)}</span>
+        <span class="cr">#<b>${a.r.rank}</b> · ${fmtPct(a.r.share)}</span>
+      </button></li>`).join('')}</ul>`
+      : `<p class="none">Not among the listed exporters in any other market here.</p>`}
+  </div>`;
+}
+
+function paintBoard() {
+  const m = market;
+  $('#board').innerHTML = `<span class="eyebrow">Top exporters — ${esc(m.name.toLowerCase())}, ${esc(m.year)}</span>` +
+    m.rows.map(r => {
+      const c = CO[r.iso];
+      return `<button class="row" data-iso="${esc(r.iso)}"${selected === r.iso ? ' data-sel' : ''}>
+        <span class="fill" style="width:${r.barPct.toFixed(1)}%"></span>
+        <span class="rk">${r.rank}</span>
+        <span class="cn">${esc(c ? c.name : r.iso)}${m.hub.has(r.iso) ? '<span class="hub">HUB</span>' : ''}${r.mirror ? '<span class="hub est">EST</span>' : ''}</span>
+        <span class="vl">${fmtVal(r.v)}</span>
+        <span class="sh">${fmtPct(r.share)}</span>
+      </button>`;
+    }).join('');
+}
+
+function wirePanel() {
+  const d = $('#deselect');
+  if (d) d.onclick = () => select(null);
+  for (const b of document.querySelectorAll('.cross button')) {
+    b.onclick = () => setMarket(MARKETS.find(m => m.id === b.dataset.mkt), true);
+  }
+  for (const b of document.querySelectorAll('.row')) {
+    b.onclick = () => { select(b.dataset.iso); flyToCountry(b.dataset.iso); };
+    b.onmouseenter = () => setHover(b.dataset.iso);
+    b.onmouseleave = () => setHover(null);
+  }
+}
+
+/* ---- selection & hover --------------------------------------------------- */
+function setHover(iso) {
+  hoverline.setAttribute('d', iso && CO[iso] ? CO[iso].d : '');
+}
+function select(iso) {
+  selected = iso && CO[iso] ? iso : null;
+  selline.setAttribute('d', selected ? CO[selected].d : '');
+  paintPanel();
+  if (selected) {
+    const row = document.querySelector(`.row[data-iso="${selected}"]`);
+    if (row) row.scrollIntoView({ block: 'nearest', behavior: REDUCED ? 'auto' : 'smooth' });
+  }
+}
+
+svg.addEventListener('click', (e) => {
+  if (moved > VB.w * 0.004) return;                 // that was a drag, not a click
+  const t = e.target.closest('[data-iso]');
+  if (t) select(t.dataset.iso); else select(null);
+});
+svg.addEventListener('dblclick', (e) => { const p = toVB(e); zoomAt(p.x, p.y, k * 1.9); });
+
+/* ---- tooltip ------------------------------------------------------------- */
+const tip = $('#tip'), stage = $('#stage');
+function showTip(e) {
+  const t = e.target.closest('[data-iso]');
+  if (!t) return hideTip();
+  const iso = t.dataset.iso, c = CO[iso], r = market.by[iso];
+  if (!c) return hideTip();
+  setHover(iso);
+  tip.innerHTML = `<b>${esc(c.name)}</b>` + (r
+    ? ` <span class="r">#${r.rank}</span><br><span class="v">${fmtVal(r.v)} · ${fmtPct(r.share)} of world exports${r.mirror ? ' · est.' : ''}</span>`
+    : `<br><span class="v">no recorded exports</span>`);
+  tip.dataset.on = '1';
+  const b = stage.getBoundingClientRect(), tb = tip.getBoundingClientRect();
+  let x = e.clientX - b.left + 14, y = e.clientY - b.top + 14;
+  if (x + tb.width > b.width - 8) x = e.clientX - b.left - tb.width - 14;
+  if (y + tb.height > b.height - 8) y = e.clientY - b.top - tb.height - 14;
+  tip.style.transform = `translate(${x}px,${y}px)`;
+}
+function hideTip() { delete tip.dataset.on; setHover(null); }
+
+/* ---- market rail --------------------------------------------------------- */
+const rail = $('#markets');
+for (const m of MARKETS) {
+  const b = document.createElement('button');
+  b.className = 'mkt';
+  b.dataset.id = m.id;
+  b.style.setProperty('--c', m.color);
+  b.setAttribute('aria-pressed', 'false');
+  b.innerHTML = `<span class="dot"></span><span class="nm">${esc(m.emoji)} ${esc(m.name)}</span><span class="sz">${fmtVal(m.total)}</span>`;
+  b.onclick = () => setMarket(m, true);
+  rail.appendChild(b);
+}
+
+/* ---- country search ------------------------------------------------------ */
+const q = $('#q'), sug = $('#sug');
+const NAMES = Object.values(CO).sort((a, b) => a.name.localeCompare(b.name));
+let sugIdx = -1;
+function renderSug() {
+  const v = q.value.trim().toLowerCase();
+  if (!v) { sug.hidden = true; return; }
+  const hits = NAMES.filter(c => c.name.toLowerCase().includes(v) || c.id.toLowerCase() === v).slice(0, 8);
+  if (!hits.length) { sug.hidden = true; return; }
+  sugIdx = Math.min(sugIdx, hits.length - 1);
+  sug.innerHTML = hits.map((c, i) => `<button data-iso="${esc(c.id)}"${i === sugIdx ? ' data-on' : ''}>${esc(c.name)}<span class="iso num">${esc(c.id)}</span></button>`).join('');
+  sug.hidden = false;
+  for (const b of sug.children) b.onmousedown = (e) => { e.preventDefault(); pick(b.dataset.iso); };
+}
+function pick(iso) {
+  q.value = ''; sug.hidden = true; sugIdx = -1;
+  select(iso); flyToCountry(iso);
+}
+q.oninput = () => { sugIdx = -1; renderSug(); };
+q.onblur = () => setTimeout(() => { sug.hidden = true; }, 120);
+q.onkeydown = (e) => {
+  const n = sug.hidden ? 0 : sug.children.length;
+  if (e.key === 'ArrowDown' && n) { e.preventDefault(); sugIdx = (sugIdx + 1) % n; renderSug(); }
+  else if (e.key === 'ArrowUp' && n) { e.preventDefault(); sugIdx = (sugIdx - 1 + n) % n; renderSug(); }
+  else if (e.key === 'Enter' && n) { e.preventDefault(); pick(sug.children[Math.max(0, sugIdx)].dataset.iso); }
+  else if (e.key === 'Escape') { q.value = ''; sug.hidden = true; q.blur(); }
+};
+
+/* ---- keyboard ------------------------------------------------------------ */
+addEventListener('keydown', (e) => {
+  if (e.target.tagName === 'INPUT') return;
+  const step = VB.w * 0.06 / k;
+  if (e.key === 'Escape') select(null);
+  else if (e.key === '+' || e.key === '=') zoomAt(VB.x + VB.w / 2, VB.y + VB.h / 2, k * 1.4);
+  else if (e.key === '-' || e.key === '_') zoomAt(VB.x + VB.w / 2, VB.y + VB.h / 2, k / 1.4);
+  else if (e.key === '0') flyTo(VB.x + VB.w / 2, VB.y + VB.h / 2, 1);
+  else if (e.key === 'ArrowLeft') { tx += step; apply(); }
+  else if (e.key === 'ArrowRight') { tx -= step; apply(); }
+  else if (e.key === 'ArrowUp') { ty += step; apply(); }
+  else if (e.key === 'ArrowDown') { ty -= step; apply(); }
+  else return;
+  e.preventDefault();
+});
+
+/* ---- go ------------------------------------------------------------------ */
+apply();
+setMarket(MARKETS[0]);
+</script>
