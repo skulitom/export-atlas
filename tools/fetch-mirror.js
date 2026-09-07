@@ -64,7 +64,28 @@ const PAIRS = {
   ships: [R, 'IRN'],
   aircraft: [R, 'BLR', 'USA'],
   solar: [R],
-  watches: [R]
+  watches: [R],
+  // --- third pass ------------------------------------------------------------
+  tobacco: [R, 'BLR', 'ZWE'],
+  rubber: [R, 'MMR', 'LBR'],
+  avocado: [R],
+  wool: [R, 'SYR'],
+  timber: [R, 'BLR'],
+  vanilla: [R],
+  beer: [R, 'BLR'],
+  pork: [R, 'BLR'],
+  poultry: [R, 'BLR'],
+  uranium: [R, 'UZB', 'NER'],
+  electricity: [R, 'BLR', 'IRN', 'TKM', 'LAO'],
+  steel: [R, 'BLR', 'IRN', 'VEN'],
+  platinum: [R, 'ZWE'],
+  nickel: [R, 'CUB'],
+  plastics: [R, 'IRN', 'BLR', 'SYR'],
+  rareearth: [R, 'MMR'],
+  chipgear: [R],
+  medical: [R, 'BLR'],
+  footwear: [R, 'BLR', 'MMR'],
+  cosmetics: [R, 'BLR', 'IRN']
 };
 
 const reporters = JSON.parse(fs.readFileSync(path.join(RAW, 'reporters.json'), 'utf8')).results;

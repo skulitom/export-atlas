@@ -1,7 +1,7 @@
 # Export Atlas
 
 An interactive dark-mode world map of who sells the world its stuff. Pick one of
-forty-six markets — forty in goods, six in services — and the map floods with
+sixty-six markets — sixty in goods, six in services — and the map floods with
 that market's own colour —
 the deeper the shade, the larger that country's share of world exports. Click any
 country for its rank, its share, a note on why it matters, and every other market
@@ -18,22 +18,23 @@ offline.
 
 ## The markets
 
-Forty-six, grouped in the rail and sorted largest-first inside each group:
+Sixty-six, grouped in the rail and sorted largest-first inside each group:
 
 | | |
 |---|---|
-| **Agriculture** (13) | Cocoa · Coffee · Tea · Sugar · Bananas · Olive oil · Wheat · Maize · Rice · Soybeans · Palm oil · Cotton · Cut flowers |
-| **Food & drink** (6) | Chocolate · Wine · Spirits · Cheese · Beef · Fish & seafood |
-| **Energy** (4) | Crude oil · Refined petroleum · Natural gas & LNG · Coal |
-| **Minerals & materials** (6) | Gold · Diamonds · Copper · Iron ore · Aluminium · Fertiliser |
-| **Technology** (5) | Semiconductors · Smartphones · Computers · Lithium-ion batteries · Solar panels |
-| **Manufactured** (6) | Cars · Aircraft · Ships · Clothing · Watches · Pharmaceuticals |
+| **Agriculture** (19) | Soybeans · Wheat · Maize · Palm oil · Coffee · Sugar · Timber · Rice · Cotton · Bananas · Rubber · Olive oil · Tobacco · Cut flowers · Cocoa · Tea · Avocados · Wool · Vanilla |
+| **Food & drink** (9) | Fish & seafood · Beef · Cheese · Spirits · Wine · Chocolate · Pork · Poultry · Beer |
+| **Energy** (6) | Crude oil · Refined petroleum · Natural gas & LNG · Coal · Electricity · Uranium & nuclear fuel |
+| **Minerals & materials** (11) | Plastics · Gold · Steel · Copper · Iron ore · Diamonds · Fertiliser · Aluminium · Platinum & palladium · Nickel · Rare earths |
+| **Technology** (7) | Semiconductors · Computers · Smartphones · Medical instruments · Lithium-ion batteries · Chipmaking machines · Solar panels |
+| **Manufactured** (8) | Cars · Pharmaceuticals · Clothing · Perfume & cosmetics · Footwear · Aircraft · Ships · Watches |
 | **Services** (6) | Commercial services · Travel & tourism · Transport & freight · Finance & insurance · Computing & business services · Intellectual property |
 
 Cocoa and chocolate are deliberately both here, as are crude oil and refined
 petroleum, and cotton and clothing. Each pair is the same commodity at two
-stages, and the maps are barely recognisable as the same trade. The services
-maps are a third thing again: nothing is loaded onto a ship, and the countries
+stages, and the maps are barely recognisable as the same trade. So are cotton
+and clothing, iron ore and steel, and rubber against the tyres it becomes. The
+services maps are a third thing again: nothing is loaded onto a ship, and the countries
 that win are mostly not the ones that win at goods.
 
 ## Where the numbers come from

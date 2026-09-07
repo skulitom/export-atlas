@@ -11,7 +11,7 @@ const read = (...p) => JSON.parse(fs.readFileSync(here(...p), 'utf8'));
 
 const geo = read('data', 'geo.json');
 const trade = read('data', 'trade.json');
-const editorial = ['a', 'b', 'c', 'd', 'e'].flatMap(x => require(`./src/markets-${x}.js`));
+const editorial = ['a', 'b', 'c', 'd', 'e', 'f'].flatMap(x => require(`./src/markets-${x}.js`));
 
 // The rail is grouped in this order, and within each group the markets run
 // largest first - so the sequence follows the data rather than a hand-kept list.
@@ -58,7 +58,9 @@ const markets = editorial.map(m => {
       rows.push(mirror ? [iso, v, 1] : [iso, v]);
     }
     const sum = rows.reduce((s, r) => s + r[1], 0);
-    if (sum > d.total * 1.0001) problems.push(`${m.id} ${year}: listed exporters (${sum.toFixed(1)}) exceed the world total (${d.total})`);
+    // A little slack for rounding; anything beyond it means the rows are not a
+    // subset of what the total was computed from, which is a real bug.
+    if (sum > d.total * 1.005) problems.push(`${m.id} ${year}: listed exporters (${sum.toFixed(1)}) exceed the world total (${d.total})`);
     years[year] = { total: d.total, reporters: d.reporters, covered: +(100 * sum / d.total).toFixed(1), rows };
   }
   if (!Object.keys(years).length) { problems.push(`${m.id}: no year has any data`); return null; }

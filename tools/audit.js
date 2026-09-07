@@ -31,7 +31,7 @@ const mirrors = (y) => {
   return fs.existsSync(f) ? JSON.parse(fs.readFileSync(f, 'utf8')) : {};
 };
 
-const editorial = ['a', 'b', 'c', 'd', 'e'].flatMap(x => require(path.join(root, 'src', `markets-${x}.js`)));
+const editorial = ['a', 'b', 'c', 'd', 'e', 'f'].flatMap(x => require(path.join(root, 'src', `markets-${x}.js`)));
 const geoIds = new Set(JSON.parse(fs.readFileSync(path.join(root, 'data', 'geo.json'), 'utf8')).map(c => c.id));
 
 // --- services: World Bank series -------------------------------------------
@@ -117,13 +117,16 @@ for (const m of editorial) {
   for (const year of YEARS) {
     const d = load(m.id, year);
     if (!d || !d.list.length) continue;
-    const kept = d.list.filter((r, i) => geoIds.has(r.iso) && i < TOP_N && 100 * r.v / d.total >= MIN_SHARE);
+    const kept = d.list.filter((r, i) => r.v > 0 && geoIds.has(r.iso) && i < TOP_N && 100 * r.v / d.total >= MIN_SHARE);
     if (!kept.length) continue;
     yearsWithData.add(year);
     rec.y[year] = {
       total: +d.total.toFixed(3),
       reporters: d.reported,
-      rows: kept.map(r => (r.mirror ? [r.iso, +r.v.toFixed(3), 1] : [r.iso, +r.v.toFixed(3)]))
+      // Significant figures rather than decimal places: vanilla's smallest listed
+      // exporter is under a million dollars, and toFixed(3) rounded it to zero -
+      // and rounded enough others up that the rows outran the total.
+      rows: kept.map(r => (r.mirror ? [r.iso, +r.v.toPrecision(5), 1] : [r.iso, +r.v.toPrecision(5)]))
     };
   }
   if (!Object.keys(rec.y).length) { console.log(`${m.id}: NO DATA IN ANY YEAR`); continue; }

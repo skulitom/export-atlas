@@ -23,6 +23,14 @@ const MARKETS = {
   phones: { hs: '851712,851713' }, computers: { hs: '8471' },
   aircraft: { hs: '8802' }, ships: { hs: '8901' },
   solar: { hs: '854140,854143' }, watches: { hs: '9101,9102' },
+  // --- third pass ------------------------------------------------------------
+  tobacco: { hs: '2401' }, rubber: { hs: '4001' }, avocado: { hs: '080440' },
+  wool: { hs: '5101' }, timber: { hs: '4407' }, vanilla: { hs: '0905' },
+  beer: { hs: '2203' }, pork: { hs: '0203' }, poultry: { hs: '0207' },
+  uranium: { hs: '2844' }, electricity: { hs: '2716' }, steel: { hs: '72' },
+  platinum: { hs: '7110' }, nickel: { hs: '2604,7502,720260' }, plastics: { hs: '39' },
+  rareearth: { hs: '284690' }, chipgear: { hs: '8486' }, medical: { hs: '9018' },
+  footwear: { hs: '64' }, cosmetics: { hs: '33' },
 
   // --- services ------------------------------------------------------------
   // UN Comtrade's own services database is unusable for a world map: the United
