@@ -15,13 +15,21 @@ const path = require('path');
 const root = path.join(__dirname, '..');
 const RAW = path.join(root, 'build', 'raw');
 const YEAR = process.argv[2] || '2023';
+const FORCE = require('./overrides.js').forceMirror;
 
 const CODES = {
   cocoa: '1801', coffee: '0901', tea: '0902', crude: '2709', gas: '2711',
   chips: '8542', cars: '8703', wine: '2204', pharma: '30', gold: '7108',
   wheat: '1001', rice: '1006', palm: '1511', bananas: '0803', fish: '03',
   diamonds: '7102', copper: '2603,7403', batteries: '850760',
-  apparel: '61,62', flowers: '0603'
+  apparel: '61,62', flowers: '0603',
+  // --- added in the second pass ---------------------------------------------
+  chocolate: '1806', soy: '1201', beef: '0201,0202', cheese: '0406',
+  sugar: '1701', olive: '1509', spirits: '2208', maize: '1005',
+  cotton: '5201', refined: '2710', coal: '2701', ironore: '2601',
+  aluminium: '7601', fertiliser: '31', phones: '851712,851713',
+  computers: '8471', aircraft: '8802', ships: '8901',
+  solar: '854140,854143', watches: '9101,9102'
 };
 
 // Countries worth mirroring, per market. Only pairs that are actually missing
@@ -47,7 +55,29 @@ const PAIRS = {
   copper: [R, 'IRN', 'LAO', 'TJK'],
   batteries: [R],
   apparel: ['BGD', R, 'NPL', 'SYR', 'MMR'],
-  flowers: [R]
+  flowers: [R],
+  // --- second pass ----------------------------------------------------------
+  // Belarus stopped filing alongside Russia, which matters most for potash.
+  chocolate: [R, 'BLR'],
+  soy: [R],
+  beef: [R, 'BLR'],
+  cheese: [R, 'BLR'],
+  sugar: [R, 'CUB'],
+  olive: [R, 'SYR'],
+  spirits: [R, 'CUB'],
+  maize: [R],
+  cotton: [R, 'UZB', 'TKM', 'SYR', 'TJK', 'BEN', 'MLI', 'BFA'],
+  refined: [R, 'BLR', 'IRN', 'VEN', 'DZA', 'LBY', 'TKM'],
+  coal: [R],
+  ironore: [R, 'IRN'],
+  aluminium: [R, 'TJK', 'IRN'],
+  fertiliser: [R, 'BLR', 'IRN'],
+  phones: [R],
+  computers: [R],
+  ships: [R, 'IRN'],
+  aircraft: [R, 'BLR', 'USA'],
+  solar: [R],
+  watches: [R]
 };
 
 const reporters = JSON.parse(fs.readFileSync(path.join(RAW, 'reporters.json'), 'utf8')).results;
@@ -84,7 +114,7 @@ async function get(url, tries = 6) {
     for (const iso of isos) {
       const key = `${market}/${iso}`;
       if (out[key] !== undefined) { console.log(`skip  ${key}`); continue; }
-      if (reported.has(iso)) { console.log(`self  ${key} — reports its own data, no mirror needed`); continue; }
+      if (reported.has(iso) && !FORCE[key]) { console.log(`self  ${key} — reports its own data, no mirror needed`); continue; }
       if (!M49[iso]) { console.log(`??    ${key} — no M49 code`); continue; }
       const q = new URLSearchParams({
         reporterCode: importerCodes.join(','), period: YEAR, partnerCode: String(M49[iso]),

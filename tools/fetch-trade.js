@@ -15,7 +15,14 @@ const CODES = {
   chips: '8542', cars: '8703', wine: '2204', pharma: '30', gold: '7108',
   wheat: '1001', rice: '1006', palm: '1511', bananas: '0803', fish: '03',
   diamonds: '7102', copper: '2603,7403', batteries: '850760',
-  apparel: '61,62', flowers: '0603'
+  apparel: '61,62', flowers: '0603',
+  // --- added in the second pass ---------------------------------------------
+  chocolate: '1806', soy: '1201', beef: '0201,0202', cheese: '0406',
+  sugar: '1701', olive: '1509', spirits: '2208', maize: '1005',
+  cotton: '5201', refined: '2710', coal: '2701', ironore: '2601',
+  aluminium: '7601', fertiliser: '31', phones: '851712,851713',
+  computers: '8471', aircraft: '8802', ships: '8901',
+  solar: '854140,854143', watches: '9101,9102'
 };
 
 const reporters = JSON.parse(fs.readFileSync(path.join(RAW, 'reporters.json'), 'utf8')).results;

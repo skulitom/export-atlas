@@ -11,16 +11,36 @@ const read = (...p) => JSON.parse(fs.readFileSync(here(...p), 'utf8'));
 
 const geo = read('data', 'geo.json');
 const trade = read('data', 'trade.json');
-const editorial = [...require('./src/markets-a.js'), ...require('./src/markets-b.js')];
+const editorial = ['a', 'b', 'c', 'd'].flatMap(x => require(`./src/markets-${x}.js`));
+
+// The rail is grouped, so the running order is declared here rather than being
+// an accident of which file a market happens to live in.
+const ORDER = [
+  'cocoa', 'coffee', 'tea', 'sugar', 'bananas', 'olive', 'wheat', 'maize',
+  'rice', 'soy', 'palm', 'cotton', 'flowers',
+  'chocolate', 'wine', 'spirits', 'cheese', 'beef', 'fish',
+  'crude', 'refined', 'gas', 'coal',
+  'gold', 'diamonds', 'copper', 'ironore', 'aluminium', 'fertiliser',
+  'chips', 'phones', 'computers', 'batteries', 'solar',
+  'cars', 'aircraft', 'ships', 'apparel', 'watches', 'pharma'
+];
 
 const problems = [];
 const warnings = [];
 const geoIds = new Set(geo.map(c => c.id));
 
+{
+  const listed = new Set(ORDER), have = new Set(editorial.map(m => m.id));
+  for (const id of ORDER) if (!have.has(id)) { console.error(`ORDER names ${id}, which no markets file defines`); process.exit(1); }
+  for (const m of editorial) if (!listed.has(m.id)) { console.error(`${m.id} is defined but missing from ORDER`); process.exit(1); }
+  if (ORDER.length !== new Set(ORDER).size) { console.error('ORDER contains a duplicate'); process.exit(1); }
+  editorial.sort((a, b) => ORDER.indexOf(a.id) - ORDER.indexOf(b.id));
+}
+
 const markets = editorial.map(m => {
   const t = trade.markets[m.id];
   if (!t) { problems.push(`${m.id}: no entry in data/trade.json`); return null; }
-  if (!m.name || !m.color || !m.blurb) problems.push(`${m.id}: missing a required editorial field`);
+  if (!m.name || !m.color || !m.blurb || !m.group) problems.push(`${m.id}: missing a required editorial field`);
 
   const seen = new Set();
   const exporters = [];
@@ -49,7 +69,7 @@ const markets = editorial.map(m => {
 
   return {
     id: m.id, name: m.name, emoji: m.emoji, hs: m.hs, unit: m.unit, color: m.color,
-    blurb: m.blurb, caveat: m.caveat || null, hubs,
+    group: m.group, blurb: m.blurb, caveat: m.caveat || null, hubs,
     year: trade.year, total: t.total, reporters: t.reporters,
     covered: +(100 * sum / t.total).toFixed(1),
     exporters
@@ -85,7 +105,7 @@ fs.writeFileSync(here('artifact.html'), tpl);
 fs.writeFileSync(here('index.html'),
   '<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n' +
   '<meta name="viewport" content="width=device-width,initial-scale=1">\n' +
-  '<meta name="description" content="An interactive dark-mode world map of who exports what, across twenty commodity markets. Figures from UN Comtrade, ' + trade.year + '.">\n' +
+  `<meta name="description" content="An interactive dark-mode world map of who exports what, across ${markets.length} commodity markets. Figures from UN Comtrade, ${trade.year}.">\n` +
   tpl.replace('</style>', '</style>\n</head>\n<body>') +
   '\n</body>\n</html>\n');
 

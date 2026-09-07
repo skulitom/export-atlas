@@ -1,7 +1,7 @@
 # Export Atlas
 
 An interactive dark-mode world map of who sells the world its stuff. Pick one of
-twenty commodity markets and the map floods with that commodity's own colour —
+forty commodity markets and the map floods with that commodity's own colour —
 the deeper the shade, the larger that country's share of world exports. Click any
 country for its rank, its share, a note on why it matters, and every other market
 it appears in.
@@ -14,9 +14,20 @@ offline.
 
 ## The markets
 
-Cocoa · Coffee · Tea · Crude oil · Natural gas & LNG · Semiconductors · Cars ·
-Wine · Pharmaceuticals · Gold · Wheat · Rice · Palm oil · Bananas · Fish &
-seafood · Diamonds · Copper · Lithium-ion batteries · Clothing · Cut flowers
+Forty, grouped in the rail:
+
+| | |
+|---|---|
+| **Agriculture** (13) | Cocoa · Coffee · Tea · Sugar · Bananas · Olive oil · Wheat · Maize · Rice · Soybeans · Palm oil · Cotton · Cut flowers |
+| **Food & drink** (6) | Chocolate · Wine · Spirits · Cheese · Beef · Fish & seafood |
+| **Energy** (4) | Crude oil · Refined petroleum · Natural gas & LNG · Coal |
+| **Minerals & materials** (6) | Gold · Diamonds · Copper · Iron ore · Aluminium · Fertiliser |
+| **Technology** (5) | Semiconductors · Smartphones · Computers · Lithium-ion batteries · Solar panels |
+| **Manufactured** (6) | Cars · Aircraft · Ships · Clothing · Watches · Pharmaceuticals |
+
+Cocoa and chocolate are deliberately both here, as are crude oil and refined
+petroleum, and cotton and clothing. Each pair is the same commodity at two
+stages, and the maps are barely recognisable as the same trade.
 
 ## Where the numbers come from
 
@@ -39,9 +50,18 @@ wheat, fish, diamonds and copper; Bangladesh, the world's second-largest clothin
 exporter, does not file either. Dropping them would be a worse error than
 estimating them, so for a curated list of known non-filers the app uses **mirror
 data** — the sum of what every other country reports importing from them.
-Twenty-one figures are sourced this way. Each is marked `EST` in the app and
+Forty-three figures are sourced this way. Each is marked `EST` in the app and
 flagged in `data/trade.json`. Mirror values are CIF (they include freight and
 insurance) where reported exports are FOB, so they run a few per cent high.
+
+**One override.** Mirror data normally only fills a hole. There is a single case
+where it replaces a country's own filing: the United States reports $4.1bn of
+aircraft exports under HS 8802 for 2023 while the rest of the world reports
+importing $38.5bn of aircraft from it. American aircraft exports are largely
+recorded outside that heading in the Census filing, so the reported figure is not
+usable and the mirror is. That override, and the evidence for it, is in
+`tools/overrides.js`; the app carries the same explanation on the market itself.
+Nothing else is adjusted for merely looking surprising.
 
 **Taiwan** files no data with the UN; Comtrade carries its trade as *Other Asia,
 nes*, which is what this project maps to `TWN`. It is the standard workaround and
@@ -65,7 +85,12 @@ it matters — Taiwan is the second-largest semiconductor exporter on the map.
   filing error — Nigeria's $157m of cut flowers, for instance — the figure is
   left in and labelled rather than quietly deleted. Anything else would make the
   dataset unauditable.
-- Each market lists its top 30 exporters, which covers 87–99.6% of world exports;
+- **The HS code is the definition.** A market is exactly what its heading covers
+  and nothing else, which sometimes cuts across the everyday meaning of the word.
+  "Ships" is HS 8901, commercial vessels — it excludes yachts, warships and
+  dredgers, which sit in neighbouring headings and would otherwise drown out the
+  shipbuilding story.
+- Each market lists its top 30 exporters, which covers 87–99.8% of world exports;
   the remainder is a long tail of small sellers.
 
 Country boundaries are [Natural Earth](https://www.naturalearthdata.com/) 1:50m
@@ -105,13 +130,19 @@ into `build/raw/` and run `node tools/make-geo.js`.
 
 ```
 index.html          built, and what GitHub Pages serves
-build.js            joins geometry + trade data + copy into the page
+build.js            joins geometry + trade data + copy; owns the rail order
 src/app.html        the page itself: styles, markup, and all the map code
 src/markets-*.js    hand-written only — framing, palette, per-country notes
 data/geo.json       238 countries, simplified and pre-projected
 data/trade.json     generated — the sourced export figures
+tools/overrides.js  the documented exceptions to "use what was reported"
 tools/              fetch, audit and geometry scripts
 ```
+
+Adding a market takes three edits: its HS code in `tools/fetch-trade.js`, an
+entry in one of the `src/markets-*.js` files, and its id in the `ORDER` list in
+`build.js` that fixes where it sits in the rail. The build refuses to run if
+those three disagree.
 
 The split is deliberate: `src/markets-*.js` holds nothing but prose and colour,
 and every number lives in `data/trade.json`. A person edits one, a script

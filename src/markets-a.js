@@ -13,8 +13,8 @@
 
 module.exports = [
 {
-  id: "cocoa", name: "Cocoa Beans", emoji: "🍫",
-  hs: "HS 1801", unit: "raw beans", color: "#b5713a",
+  id: "cocoa", name: "Cocoa Beans", emoji: "🫘",
+  hs: "HS 1801", unit: "raw beans", color: "#b5713a", group: "Agriculture",
   blurb: "Two neighbouring West African countries grow more than half the world’s cocoa, on millions of smallholder farms. Almost none of it becomes chocolate where it is grown — the beans are shipped north to be ground, and the value is added in Europe.",
   hubs: ["NLD","BEL","MYS"],
   notes: {
@@ -35,7 +35,7 @@ module.exports = [
 },
 {
   id: "coffee", name: "Coffee", emoji: "☕",
-  hs: "HS 0901", unit: "green + roasted", color: "#c0563a",
+  hs: "HS 0901", unit: "green + roasted", color: "#c0563a", group: "Agriculture",
   blurb: "The clearest case of a market where growing and selling are separate businesses. Brazil leads on beans, but Switzerland, Germany and Italy rank near the top purely by roasting, capsuling and re-exporting what other countries farmed.",
   hubs: ["CHE","DEU","ITA","NLD","FRA","BEL","POL","CAN"],
   notes: {
@@ -57,7 +57,7 @@ module.exports = [
 },
 {
   id: "tea", name: "Tea", emoji: "🍵",
-  hs: "HS 0902", unit: "black + green", color: "#4fbf72",
+  hs: "HS 0902", unit: "black + green", color: "#4fbf72", group: "Agriculture",
   blurb: "A market split down the middle. China dominates green tea; black tea is a plantation industry concentrated in Kenya, Sri Lanka and India. Kenya, which had no tea at all before 1903, is now the largest black tea exporter on earth.",
   hubs: ["ARE","POL","DEU","GBR","USA"],
   notes: {
@@ -76,7 +76,7 @@ module.exports = [
 },
 {
   id: "crude", name: "Crude Oil", emoji: "🛢️",
-  hs: "HS 2709", unit: "crude petroleum", color: "#8b82ff",
+  hs: "HS 2709", unit: "crude petroleum", color: "#8b82ff", group: "Energy",
   blurb: "Still the largest traded commodity on earth by value — worth more than every food market on this map put together. The 2022 sanctions on Russia redrew the flow map more than anything since the 1970s without much changing who pumps the most.",
   caveat: "Iran is effectively missing from this map. It files no crude exports, and its main buyers do not report importing them, so roughly a million and a half barrels a day leave no trace in the statistics.",
   hubs: [],
@@ -100,7 +100,7 @@ module.exports = [
 },
 {
   id: "gas", name: "Natural Gas & LNG", emoji: "🔥",
-  hs: "HS 2711", unit: "piped + liquefied", color: "#38c9e0",
+  hs: "HS 2711", unit: "piped + liquefied", color: "#38c9e0", group: "Energy",
   blurb: "Gas used to be a regional business — you sold it to whoever your pipeline reached. Liquefaction made it global, and the scramble to replace Russian pipeline gas in Europe made the United States the largest LNG exporter in the world in under a decade.",
   hubs: ["NLD","BEL"],
   notes: {
@@ -119,7 +119,7 @@ module.exports = [
 },
 {
   id: "chips", name: "Semiconductors", emoji: "💾",
-  hs: "HS 8542", unit: "integrated circuits", color: "#2fd39a",
+  hs: "HS 8542", unit: "integrated circuits", color: "#2fd39a", group: "Technology",
   blurb: "The most geographically concentrated market on this map. One company in Taiwan makes the large majority of the world’s most advanced logic chips, and the entire industry ultimately depends on lithography machines built in a single Dutch town.",
   hubs: ["HKG","SGP"],
   notes: {
@@ -141,7 +141,7 @@ module.exports = [
 },
 {
   id: "cars", name: "Cars", emoji: "🚗",
-  hs: "HS 8703", unit: "passenger vehicles", color: "#ef4b57",
+  hs: "HS 8703", unit: "passenger vehicles", color: "#ef4b57", group: "Manufactured",
   blurb: "Germany has led this market by value for decades, but 2023 was the year China passed Japan to become the largest car exporter by unit volume — driven almost entirely by electric vehicles, which barely existed as an export category five years earlier.",
   hubs: ["BEL","NLD"],
   notes: {
@@ -164,7 +164,7 @@ module.exports = [
 },
 {
   id: "wine", name: "Wine", emoji: "🍷",
-  hs: "HS 2204", unit: "bottled + bulk", color: "#b83d69",
+  hs: "HS 2204", unit: "bottled + bulk", color: "#b83d69", group: "Food & drink",
   blurb: "Three countries sell more than half the world’s wine, and the gap between them is about price rather than volume. France exports fewer litres than Italy and earns roughly 60% more — the appellation system is, commercially, a pricing mechanism.",
   hubs: ["GBR","HKG","SGP","NLD"],
   notes: {
@@ -186,7 +186,7 @@ module.exports = [
 },
 {
   id: "pharma", name: "Pharmaceuticals", emoji: "💊",
-  hs: "HS 30", unit: "medicaments", color: "#3d9ef0",
+  hs: "HS 30", unit: "medicaments", color: "#3d9ef0", group: "Manufactured",
   blurb: "A market shaped as much by tax law as by science. Ireland and Belgium rank absurdly high for their size because multinationals book manufacturing and intellectual property there, while India — which supplies a huge share of the world’s actual pills — ranks far lower, because generics are cheap.",
   hubs: ["BEL","NLD","IRL"],
   notes: {
@@ -203,7 +203,7 @@ module.exports = [
 },
 {
   id: "gold", name: "Gold", emoji: "🥇",
-  hs: "HS 7108", unit: "unwrought + semi-manufactured", color: "#f0b429",
+  hs: "HS 7108", unit: "unwrought + semi-manufactured", color: "#f0b429", group: "Minerals & materials",
   blurb: "The gold export map is not a map of gold mines. Four refining and vaulting centres — Switzerland, London, Dubai and Hong Kong — handle most of the flow, because gold gets re-refined, re-cast and re-sold far more often than it gets dug up.",
   hubs: ["CHE","GBR","ARE","HKG","SGP"],
   notes: {

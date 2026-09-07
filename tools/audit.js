@@ -28,12 +28,14 @@ for (const r of reporters) {
 for (const c of [97, 251 /* keep */, 899, 0]) { }
 const NOT_A_COUNTRY = new Set(['S19', 'ANS', 'W00', 'ZZZ', 'X1 ', 'EUR', 'BLX']);
 
+const FORCE = require('./overrides.js').forceMirror;
+
 const mirrors = (y) => {
   const f = path.join(RAW, `mirror-${y}.json`);
   return fs.existsSync(f) ? JSON.parse(fs.readFileSync(f, 'utf8')) : {};
 };
 
-const MARKETS = [...require(path.join(root, 'src', 'markets-a.js')), ...require(path.join(root, 'src', 'markets-b.js'))];
+const MARKETS = ['a', 'b', 'c', 'd'].flatMap(x => require(path.join(root, 'src', `markets-${x}.js`)));
 const geoIds = new Set(JSON.parse(fs.readFileSync(path.join(root, 'data', 'geo.json'), 'utf8')).map(c => c.id));
 
 // --- read one market-year --------------------------------------------------
@@ -61,7 +63,14 @@ function load(id, year) {
   const mir = mirrors(year);
   for (const [key, v] of Object.entries(mir)) {
     const [mk, iso] = key.split('/');
-    if (mk !== id || !(v > 0) || byIso.has(iso)) continue;
+    if (mk !== id || !(v > 0)) continue;
+    if (byIso.has(iso)) {
+      // Only an entry in overrides.js may displace a country's own filing.
+      if (!FORCE[key]) continue;
+      const at = list.findIndex(r => r.iso === iso);
+      list[at] = { iso, v, mirror: true };
+      continue;
+    }
     list.push({ iso, v, mirror: true });
   }
   list.sort((a, b) => b.v - a.v);

@@ -3,7 +3,7 @@
 module.exports = [
 {
   id: "wheat", name: "Wheat", emoji: "🌾",
-  hs: "HS 1001", unit: "grain", color: "#ddd06a",
+  hs: "HS 1001", unit: "grain", color: "#ddd06a", group: "Agriculture",
   blurb: "Only a handful of countries have both the land to grow a surplus and the ports to move it. That makes wheat the most politically sensitive food market on the map: the Black Sea alone supplies roughly a quarter of it, and North Africa and the Middle East depend on that shipping lane for bread.",
   hubs: ["TUR"],
   notes: {
@@ -20,7 +20,7 @@ module.exports = [
 },
 {
   id: "rice", name: "Rice", emoji: "🍚",
-  hs: "HS 1006", unit: "milled + paddy", color: "#e6dcc4",
+  hs: "HS 1006", unit: "milled + paddy", color: "#e6dcc4", group: "Agriculture",
   blurb: "Half the planet eats rice daily, but only about 10% of the crop is ever traded across a border — most is grown and eaten in the same country. That thin traded layer is why an Indian export restriction can raise prices in West Africa within weeks.",
   hubs: ["BEL","NLD"],
   notes: {
@@ -37,7 +37,7 @@ module.exports = [
 },
 {
   id: "palm", name: "Palm Oil", emoji: "🌴",
-  hs: "HS 1511", unit: "crude + refined", color: "#f5892b",
+  hs: "HS 1511", unit: "crude + refined", color: "#f5892b", group: "Agriculture",
   blurb: "The most concentrated agricultural market in the world: two countries supply roughly 85% of it. Oil palm yields several times more oil per hectare than any alternative crop, which is both why it is everywhere in the food supply and why it drives so much deforestation.",
   hubs: ["NLD","SGP","DEU","IND","DJI","EST"],
   notes: {
@@ -53,7 +53,7 @@ module.exports = [
 },
 {
   id: "bananas", name: "Bananas", emoji: "🍌",
-  hs: "HS 0803", unit: "fresh fruit", color: "#f2d94e",
+  hs: "HS 0803", unit: "fresh fruit", color: "#f2d94e", group: "Agriculture",
   blurb: "Nearly every exported banana is one clone, the Cavendish, propagated by cuttings — genetically identical worldwide and therefore uniformly vulnerable. Its predecessor, the Gros Michel, was wiped out of commercial trade by Panama disease in the 1950s. A new strain of that same fungus is spreading now.",
   hubs: ["NLD","BEL","USA"],
   notes: {
@@ -69,7 +69,7 @@ module.exports = [
 },
 {
   id: "fish", name: "Fish & Seafood", emoji: "🐟",
-  hs: "HS 03", unit: "fresh, frozen, processed", color: "#2f8fd1",
+  hs: "HS 03", unit: "fresh, frozen, processed", color: "#2f8fd1", group: "Food & drink",
   blurb: "Farmed fish now outweighs wild catch in global supply, and the export map shows it: Norway and Chile rank high almost entirely on salmon, while Ecuador went from a minor player to a top exporter on farmed shrimp in barely a decade.",
   hubs: ["CHN","NLD","SWE","POL"],
   notes: {
@@ -95,7 +95,7 @@ module.exports = [
 },
 {
   id: "diamonds", name: "Diamonds", emoji: "💎",
-  hs: "HS 7102", unit: "rough + polished", color: "#9fe0f0",
+  hs: "HS 7102", unit: "rough + polished", color: "#9fe0f0", group: "Minerals & materials",
   blurb: "Almost all the value here is cutting, not mining. Roughly nine in ten of the world’s diamonds are polished in Surat, India, then traded through Dubai, Antwerp and Tel Aviv. Meanwhile lab-grown stones — chemically identical, far cheaper — have taken a large bite out of the trade in the last five years.",
   hubs: ["ARE","BEL","HKG","ISR","CHE","USA"],
   notes: {
@@ -118,7 +118,7 @@ module.exports = [
 },
 {
   id: "copper", name: "Copper", emoji: "🟠",
-  hs: "HS 2603 + 7403", unit: "ore + refined metal", color: "#cf6a3c",
+  hs: "HS 2603 + 7403", unit: "ore + refined metal", color: "#cf6a3c", group: "Minerals & materials",
   blurb: "Every electric motor, transformer and power cable needs it, which makes copper the metal most tightly coupled to electrification. The Andes and the Central African Copperbelt hold most of the accessible supply — and, awkwardly for everyone else, both are a long way from where the smelters are.",
   hubs: ["JPN","DEU"],
   notes: {
@@ -134,7 +134,7 @@ module.exports = [
 },
 {
   id: "batteries", name: "Lithium-ion Batteries", emoji: "🔋",
-  hs: "HS 850760", unit: "cells + packs", color: "#a3e635",
+  hs: "HS 850760", unit: "cells + packs", color: "#a3e635", group: "Technology",
   blurb: "The youngest market on this map and the fastest-growing: exports have roughly quadrupled since 2018. China holds well over half of it, and the European entries are almost entirely Asian-owned gigafactories placed close to German car plants.",
   hubs: ["NLD","SGP"],
   notes: {
@@ -148,7 +148,7 @@ module.exports = [
 },
 {
   id: "apparel", name: "Clothing", emoji: "👕",
-  hs: "HS 61 + 62", unit: "knitted + woven garments", color: "#c964d6",
+  hs: "HS 61 + 62", unit: "knitted + woven garments", color: "#c964d6", group: "Manufactured",
   blurb: "Garment making is the classic first rung of industrialisation — low capital, high labour — so the map moves as wages rise. It went Britain, then Japan, then Korea and Taiwan, then China; it is now moving to Bangladesh, Vietnam and Cambodia, where clothing can be over 80% of all exports.",
   hubs: ["DEU","NLD","ESP","HKG","BEL","GBR"],
   notes: {
@@ -168,7 +168,7 @@ module.exports = [
 },
 {
   id: "flowers", name: "Cut Flowers", emoji: "🌷",
-  hs: "HS 0603", unit: "fresh cut", color: "#ff6fa5",
+  hs: "HS 0603", unit: "fresh cut", color: "#ff6fa5", group: "Agriculture",
   blurb: "A market built on aviation. Roses are grown on the equator — Kenya, Ethiopia, Ecuador and Colombia, where the light is strong and the altitude keeps the nights cool — then flown to Amsterdam, auctioned within hours, and trucked across Europe. Almost half of world exports pass through one Dutch auction house.",
   caveat: "Nigeria's $157m is almost certainly a filing error rather than a flower industry — it appears in no other account of this trade. It is left in because these figures are reproduced as reported, not cleaned by hand.",
   hubs: ["NLD","DEU","GBR","BEL"],
