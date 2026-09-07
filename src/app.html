@@ -162,7 +162,10 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
   margin-top: 7px;
 }
 .grp:first-child { border-top: 0; margin-top: 0; padding-top: 11px; }
-.grp .n { font-family: var(--font-mono); font-size: 9.5px; color: var(--ink-faint); }
+.grp .n {
+  font-family: var(--font-mono); font-size: 10.5px; color: var(--ink-dim);
+  font-variant-numeric: tabular-nums;
+}
 
 .mkt {
   display: grid;
@@ -554,10 +557,11 @@ const lighten = (rgb, a) => 'rgb(' + rgb.map(v => Math.round(v + (255 - v) * a))
 // Share is heavily skewed in most markets, so flatten it before it hits colour.
 const shade = (share, maxShare) => 0.14 + 0.86 * Math.pow(Math.min(1, share / maxShare), 0.42);
 
-const fmtVal = (v) => v >= 100 ? '$' + Math.round(v) + 'bn'
-  : v >= 10 ? '$' + v.toFixed(0) + 'bn'
+const fmtVal = (v) => v >= 1000 ? '$' + (v / 1000).toFixed(2) + 'tn'
+  : v >= 10 ? '$' + Math.round(v) + 'bn'
   : v >= 1 ? '$' + v.toFixed(1) + 'bn'
-  : '$' + Math.round(v * 1000) + 'm';
+  : v >= 0.01 ? '$' + Math.round(v * 1000) + 'm'
+  : '$' + (v * 1000).toFixed(1) + 'm';
 const fmtPct = (p) => p >= 10 ? p.toFixed(0) + '%' : p >= 1 ? p.toFixed(1) + '%' : p.toFixed(2) + '%';
 
 /* ---- market index -------------------------------------------------------- */
@@ -1018,8 +1022,8 @@ for (const m of MARKETS) {
     lastGroup = m.group;
     const h = document.createElement('div');
     h.className = 'grp';
-    const n = MARKETS.filter(x => x.group === m.group).length;
-    h.innerHTML = `<span class="eyebrow">${esc(m.group)}</span><span class="n">${n}</span>`;
+    h.dataset.group = m.group;
+    h.innerHTML = `<span class="eyebrow">${esc(m.group)}</span><span class="n"></span>`;
     rail.appendChild(h);
   }
   const b = document.createElement('button');
@@ -1054,6 +1058,13 @@ function paintYears() {
   for (const b of yearBar.querySelectorAll('button[data-y]')) b.onclick = () => setYear(b.dataset.y);
 
   // Keep the rail's figures on the year being shown.
+  for (const h of $('#markets').querySelectorAll('.grp')) {
+    const sec = (SECTORS[year] || {})[h.dataset.group];
+    h.querySelector('.n').textContent = sec ? fmtVal(sec.total) : '—';
+    h.title = sec
+      ? `${h.dataset.group}: ${fmtVal(sec.total)} of world exports in ${year}, across ${sec.count} markets`
+      : `${h.dataset.group}: no data for ${year}`;
+  }
   for (const b of $('#markets').querySelectorAll('.mkt')) {
     const m = MARKETS.find(x => x.id === b.dataset.id);
     const d = m && m.years[year];

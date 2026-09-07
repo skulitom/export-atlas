@@ -112,8 +112,13 @@ for (const year of trade.years) {
     const slices = markets.filter(m => m.group === g && !m.umbrella && !m.parent && m.years[year]);
     if (!slices.length) continue;
     const denom = slices.reduce((s, m) => s + m.years[year].total, 0);
+    // `denom` is the pie's base and must not double-count, so it is the sum of
+    // the non-overlapping slices. `total` is what the sector is actually worth,
+    // which for services is the umbrella market rather than the sum of parts.
+    const umbrella = markets.find(m => m.group === g && m.umbrella && m.years[year]);
     sectors[year][g] = {
       denom: +denom.toFixed(3),
+      total: +(umbrella ? umbrella.years[year].total : denom).toFixed(3),
       count: slices.length,
       slices: slices.map(m => ({ id: m.id, name: m.name, color: m.color, total: m.years[year].total }))
     };

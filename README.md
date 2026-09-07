@@ -202,6 +202,11 @@ in the fixed order set in `build.js`, and within a group the markets sort by
 world export value. The build refuses to run on a market whose group it does not
 recognise, or that has no figures behind it.
 
+Each group header in the rail carries that sector's own export total for the
+year on screen — Agriculture is $340bn in 2015 and $506bn in 2023. For services
+that figure is the umbrella market rather than the sum of the parts, since the
+parts overlap.
+
 The summary panel shows each market's slice of its own sector as a pie, with the
 other markets in that group as the remaining slices — clicking one switches to
 it. Two services markets overlap the rest and are excluded from the slices, since
