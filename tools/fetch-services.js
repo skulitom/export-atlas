@@ -21,9 +21,18 @@ const sleep = (ms) => new Promise(r => setTimeout(r, ms));
       if (fs.existsSync(out)) { console.log(`skip  ${ind} ${year}`); continue; }
       const url = `https://api.worldbank.org/v2/country/all/indicator/${ind}?date=${year}&format=json&per_page=400`;
       try {
-        const res = await fetch(url);
-        if (!res.ok) throw new Error(String(res.status));
-        const j = await res.json();
+        // The World Bank API drops the occasional request; a failure here would
+        // otherwise leave a hole that silently removes a whole year of a market.
+        let j = null, err = null;
+        for (let i = 0; i < 4 && !j; i++) {
+          try {
+            const res = await fetch(url);
+            if (!res.ok) throw new Error(String(res.status));
+            j = await res.json();
+            if (!Array.isArray(j) || !j[1]) { j = null; throw new Error('no observations'); }
+          } catch (e) { err = e; j = null; await sleep(1500 * (i + 1)); }
+        }
+        if (!j) throw err || new Error('gave up');
         // [0] is paging metadata, [1] the observations.
         const rows = (j[1] || [])
           .filter(r => r.value != null && /^[A-Z]{3}$/.test(r.countryiso3code || ''))

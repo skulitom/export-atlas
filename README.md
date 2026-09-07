@@ -9,6 +9,9 @@ it appears in.
 
 **→ [skulitom.github.io/export-atlas](https://skulitom.github.io/export-atlas/)**
 
+The year strip in the header steps the whole atlas from 2015 to 2025, keeping the
+market and the country you are looking at, so it can be played as a slideshow.
+
 No build step is needed to view it: `index.html` is a single self-contained file
 with the geometry and data embedded. Open it straight from disk and it works
 offline.
@@ -35,23 +38,31 @@ that win are mostly not the ones that win at goods.
 
 ## Where the numbers come from
 
-Everything is for **2023**, and the two kinds come from different places for a
-reason set out below. Nothing is typed in by hand: `data/trade.json` is
+Every market runs **2015 to 2025**, and the two kinds come from different places
+for a reason set out below. Nothing is typed in by hand: `data/trade.json` is
 generated, and `tools/audit.js` regenerates it from the cached API responses.
 
 ### Goods
 
-Every goods figure is **reported exports to the world for 2023**, pulled from the
+Every goods figure is **reported exports to the world**, pulled from the
 [UN Comtrade](https://comtradeplus.un.org/) public preview API at the HS code
 shown in the app (`HS 1801` for cocoa beans, `HS 8542` for integrated circuits,
 and so on).
 
-**Why 2023.** It is the most recent year with near-complete reporting. Depending
-on the market, 88–162 countries filed for 2023 against 80–138 for 2024, so 2024
-totals are materially understated — reported crude oil exports fall from $1,130bn
-to $948bn purely because fewer countries have filed. 2023 also avoids the 2022
-energy price spike, which put crude at $1,353bn and gas at $727bn and would have
-made those two markets unrepresentative of anything but that year.
+**Why the span stops at 2025, and why the late years are marked.** Annual trade
+statistics run well behind the calendar. There is no 2026 data at all and will not
+be until 2027. The recent years that do exist are real but thin, because countries
+file late: crude oil has 101 reporters for 2023, 81 for 2024 and 62 for 2025, and
+its reported world total falls from $1,130bn to $948bn to $708bn largely for that
+reason rather than any other.
+
+Reading that fall as a collapse in trade would be the single easiest mistake to
+make with a slideshow, so the app does not let it pass quietly. Every market-year
+carries its reporter count; any year under 90% of that market's best is marked
+with a dot on the year strip, and selecting it puts a note at the top of the panel
+saying how many countries have filed and that the total is understated. **2023
+remains the reference year** — the most recent complete one — and it is what fixes
+the rail ordering, so the rail does not reshuffle as the years step.
 
 **Mirror estimates.** Some significant exporters file nothing at all. Russia
 stopped reporting to Comtrade in 2022 and is absent from crude oil, gas, gold,
@@ -86,8 +97,8 @@ UK, the second-largest services exporter on earth, is not a map with a gap in it
 it is simply wrong.
 
 So the six services markets come from the **World Bank's WDI series**, built on
-IMF balance-of-payments returns, which covers 130–178 economies for 2023 with no
-major absentees. Four of them — travel, transport, finance & insurance, and the
+IMF balance-of-payments returns, which covers 130–178 economies with no major
+absentees. Four of them — travel, transport, finance & insurance, and the
 computing-and-business-services residual — are shares of commercial service
 exports applied to the total, exactly as the World Bank publishes them; the
 services total and intellectual property receipts are read directly.
@@ -150,17 +161,21 @@ To refresh the trade data — each step caches to `build/raw/`, so re-running is
 cheap and resumable:
 
 ```bash
-node tools/fetch-trade.js           # goods, one Comtrade call per market-year
-node tools/fetch-mirror.js 2023     # mirror estimates for known non-filers
-node tools/fetch-services.js        # World Bank series behind the services markets
+node tools/fetch-trade.js               # goods, one Comtrade call per market-year
+node tools/fetch-services.js            # World Bank series behind the services markets
+for y in $(seq 2015 2025); do node tools/fetch-mirror.js $y; done
 node tools/audit.js --write
 node build.js
 ```
 
 `node tools/audit.js` with no arguments prints world exports and reporter counts
-for every market and year fetched, split by kind — that table is how the reference
-year was chosen, and how to choose the next one. Pass `--goods-year` and
-`--services-year` to move either independently.
+for every market and year, starring any year under 90% of that market's best
+filing. That table is how the reference year was chosen and how to choose the
+next one; change it in `tools/markets-meta.js` along with the span itself.
+
+The whole refresh is roughly 700 API calls and takes about half an hour, almost
+all of it waiting out UN Comtrade's rate limit. Everything caches to `build/raw/`,
+so an interrupted run picks up where it stopped.
 
 To rebuild the geometry, download [ne_50m_admin_0_countries.geojson](https://github.com/nvkelso/natural-earth-vector/blob/master/geojson/ne_50m_admin_0_countries.geojson)
 into `build/raw/` and run `node tools/make-geo.js`.

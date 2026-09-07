@@ -42,6 +42,7 @@ function url(id, year) {
 (async () => {
   const cli = process.argv.slice(2).filter(a => /^\d{4}$/.test(a));
   for (const id of Object.keys(MARKETS)) {
+    if (kindOf(id) === 'services') continue;   // those come from tools/fetch-services.js
     const years = cli.length ? cli : FETCH_YEARS[kindOf(id)];
     for (const year of years) {
       const out = path.join(RAW, `${id}-${year}.json`);

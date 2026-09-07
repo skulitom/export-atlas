@@ -91,6 +91,33 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 .masthead .spacer { flex: 1; }
 
 /* ---- search -------------------------------------------------------------- */
+.years { display: flex; align-items: center; gap: 2px; flex: none; max-width: 100%; overflow-x: auto; scrollbar-width: none; }
+.years::-webkit-scrollbar { display: none; }
+.years button {
+  position: relative;
+  padding: 4px 7px 6px;
+  font-family: var(--font-mono); font-size: 11.5px; letter-spacing: .02em;
+  color: var(--ink-faint);
+  border-bottom: 2px solid transparent;
+  border-radius: 2px 2px 0 0;
+  white-space: nowrap;
+  transition: color .15s ease, border-color .2s ease;
+}
+.years button:hover { color: var(--ink); }
+.years button[aria-pressed="true"] { color: var(--ink-bright); border-bottom-color: var(--mk); }
+/* A year that is short of filings is not a year in which trade fell. */
+.years button.thin::after {
+  content: ''; position: absolute; left: 50%; bottom: -1px; width: 3px; height: 3px;
+  margin-left: -1.5px; border-radius: 50%; background: var(--ink-faint);
+}
+.years button[aria-pressed="true"].thin::after { background: transparent; }
+.years .play {
+  padding: 3px 8px 4px; margin-right: 5px; font-size: 10px;
+  color: var(--ink-dim); border: 1px solid var(--rule); border-radius: 3px; border-bottom-width: 1px;
+}
+.years .play:hover { color: var(--ink-bright); border-color: var(--ink-faint); }
+.years .play[data-on] { color: #05080d; background: var(--mk); border-color: var(--mk); }
+
 .search { position: relative; width: 210px; flex: none; }
 .search input {
   width: 100%;
@@ -350,6 +377,13 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 .hubflag b { color: var(--ink); font-weight: 500; }
 .hubflag.est { border-style: dashed; }
 .row .hub.est { color: var(--ink-dim); border-style: dashed; }
+.provisional {
+  display: flex; gap: 8px; align-items: flex-start;
+  margin: 11px 0 0; padding: 7px 9px;
+  font-size: 11.5px; line-height: 1.45; color: var(--ink-dim);
+  background: #ffffff06; border-left: 2px solid var(--ink-faint); border-radius: 0 3px 3px 0;
+}
+.provisional b { color: var(--ink); font-weight: 500; }
 .phead .caveat {
   margin: 9px 0 0; font-size: 11.5px; line-height: 1.5; color: var(--ink-dim);
   border-left: 2px solid var(--rule); padding-left: 9px;
@@ -390,7 +424,10 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
     min-height: 100dvh;
   }
   .masthead { flex-wrap: wrap; gap: 10px 16px; }
-  .search { width: 100%; }
+  .masthead .spacer { display: none; }
+  /* The year strip takes a row of its own and scrolls sideways within it. */
+  .years { order: 5; width: 100%; justify-content: flex-start; }
+  .search { order: 4; width: 100%; }
   .markets {
     display: flex; gap: 0; overflow-x: auto; overflow-y: hidden;
     border-right: 0; border-bottom: 1px solid var(--rule); padding: 0;
@@ -411,6 +448,8 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
   <header class="masthead">
     <h1 class="wordmark">Export&nbsp;<em>Atlas</em></h1>
     <p class="dek" id="dek"></p>
+    <div class="spacer"></div>
+    <div class="years" id="years" role="group" aria-label="Reference year"></div>
     <div class="spacer"></div>
     <div class="search">
       <input id="q" type="search" autocomplete="off" spellcheck="false" placeholder="Find a country…" aria-label="Find a country">
@@ -513,7 +552,7 @@ function ramp(rgb, t) {
 const lighten = (rgb, a) => 'rgb(' + rgb.map(v => Math.round(v + (255 - v) * a)).join(',') + ')';
 
 // Share is heavily skewed in most markets, so flatten it before it hits colour.
-const shade = (v, vmax) => 0.14 + 0.86 * Math.pow(v / vmax, 0.42);
+const shade = (share, maxShare) => 0.14 + 0.86 * Math.pow(Math.min(1, share / maxShare), 0.42);
 
 const fmtVal = (v) => v >= 100 ? '$' + Math.round(v) + 'bn'
   : v >= 10 ? '$' + v.toFixed(0) + 'bn'
@@ -522,29 +561,62 @@ const fmtVal = (v) => v >= 100 ? '$' + Math.round(v) + 'bn'
 const fmtPct = (p) => p >= 10 ? p.toFixed(0) + '%' : p >= 1 ? p.toFixed(1) + '%' : p.toFixed(2) + '%';
 
 /* ---- market index -------------------------------------------------------- */
-// Precompute rank, share and colour position for every country in every market.
 for (const m of MARKETS) {
   m.rgb = hex2rgb(m.color);
   m.hub = new Set(m.hubs || []);
-  m.rows = m.exporters
-    .map(([iso, v, note, mirror]) => ({ iso, v, note, mirror: !!mirror }))
-    .sort((a, b) => b.v - a.v);
-  const vmax = m.rows[0].v;
-  m.vmax = vmax;
-  m.by = {};
-  m.rows.forEach((r, i) => {
-    r.rank = i + 1;
-    r.share = 100 * r.v / m.total;
-    r.fill = ramp(m.rgb, shade(r.v, vmax));
-    r.barPct = 100 * r.v / vmax;
-    m.by[r.iso] = r;
-  });
-  m.top3 = m.rows.slice(0, 3).reduce((s, r) => s + r.share, 0);
+  // The best-reported year for this market is the yardstick every other year is
+  // judged against: a thin year is under-reported, not a year trade collapsed.
+  m.bestRep = Math.max(...Object.values(m.years).map(y => y.reporters));
+  // Colour is keyed to the largest share this market has ever given one country,
+  // held fixed across the whole span. Rescaling to each year's own leader would
+  // paint that leader at full strength every year, and a market becoming less
+  // concentrated would look identical to one that had not moved at all.
+  m.scaleMax = Math.max(...Object.values(m.years).map(d => 100 * d.rows[0][1] / d.total));
 }
-// Which markets does each country appear in? Powers the country dossier.
+
+// Rank, share and colour position for one market in one year, worked out the
+// first time that combination is shown and kept.
+const VIEWS = new Map();
+function view(m, y) {
+  const key = m.id + '|' + y;
+  if (VIEWS.has(key)) return VIEWS.get(key);
+  const d = m.years[y];
+  if (!d) { VIEWS.set(key, null); return null; }
+  const rows = d.rows
+    .map(([iso, v, mirror]) => ({ iso, v, mirror: !!mirror, note: m.notes[iso] || null }))
+    .sort((a, b) => b.v - a.v);
+  const vmax = rows[0].v;
+  const by = {};
+  rows.forEach((r, i) => {
+    r.rank = i + 1;
+    r.share = 100 * r.v / d.total;
+    r.fill = ramp(m.rgb, shade(r.share, m.scaleMax));
+    r.barPct = 100 * r.v / vmax;
+    by[r.iso] = r;
+  });
+  const v = {
+    rows, by, vmax, total: d.total, reporters: d.reporters, covered: d.covered,
+    thin: d.reporters < m.bestRep * 0.9,
+    top3: rows.slice(0, 3).reduce((s, r) => s + r.share, 0)
+  };
+  VIEWS.set(key, v);
+  return v;
+}
+
+// Which markets does each country appear in, in a given year? Powers the dossier.
 const APPEARS = {};
-for (const m of MARKETS) for (const r of m.rows) (APPEARS[r.iso] ||= []).push({ m, r });
-for (const iso in APPEARS) APPEARS[iso].sort((a, b) => a.r.rank - b.r.rank || b.r.share - a.r.share);
+function appears(y) {
+  if (APPEARS[y]) return APPEARS[y];
+  const a = {};
+  for (const m of MARKETS) {
+    const v = view(m, y);
+    if (!v) continue;
+    for (const r of v.rows) (a[r.iso] ||= []).push({ m, r });
+  }
+  for (const iso in a) a[iso].sort((x, z) => x.r.rank - z.r.rank || z.r.share - x.r.share);
+  APPEARS[y] = a;
+  return a;
+}
 
 /* ---- build the map ------------------------------------------------------- */
 const svg = $('#map');
@@ -684,12 +756,22 @@ function flyToCountry(iso) {
 
 /* ---- state --------------------------------------------------------------- */
 let market = MARKETS[0];
+// Open on the reference year: the most recent one that is completely reported.
+// Landing on the newest year would open on the thinnest data in the set.
+let year = META.years.includes(META.reference) ? META.reference : META.years[META.years.length - 1];
 let selected = null;
+const V = () => view(market, year);
 
 function setMarket(m, keepView) {
   market = m;
+  // A market may not run the whole span; hold the nearest year it does have.
+  if (!m.years[year]) {
+    const has = META.years.filter(y => m.years[y]);
+    year = has.reduce((best, y) => (Math.abs(+y - +year) < Math.abs(+best - +year) ? y : best), has[has.length - 1]);
+  }
   document.documentElement.style.setProperty('--mk', m.color);
   document.documentElement.style.setProperty('--mk-soft', m.color + '33');
+  paintYears();
   paintMap();
   paintLegend();
   paintPanel();
@@ -697,9 +779,22 @@ function setMarket(m, keepView) {
   if (!keepView) hideTip();
 }
 
+// Stepping the year keeps the market, the country and the map position, so the
+// only thing that moves is the data.
+function setYear(y, keepPlaying) {
+  if (!market.years[y]) return;
+  year = y;
+  if (!keepPlaying) stopPlay();
+  paintYears();
+  paintMap();
+  paintLegend();
+  paintPanel();
+}
+
 function paintMap() {
+  const v = V();
   for (const id in paths) {
-    const p = paths[id], r = market.by[id], c = CO[id];
+    const p = paths[id], r = v.by[id], c = CO[id];
     // Flood outward from the top exporter — a short, ranked stagger.
     p.style.transitionDelay = (!REDUCED && r && r.rank <= 14) ? (r.rank - 1) * 16 + 'ms' : '0ms';
     p.style.fill = r ? r.fill : '';
@@ -712,18 +807,17 @@ function paintMap() {
     p.classList.toggle('rk', !!r);
   }
   // The top three are marked by a bright rim on their own coastline.
-  leadline.setAttribute('d', market.rows.slice(0, 3).map(r => (CO[r.iso] || {}).d || '').join(''));
+  leadline.setAttribute('d', v.rows.slice(0, 3).map(r => (CO[r.iso] || {}).d || '').join(''));
   leadline.style.stroke = lighten(market.rgb, 0.58);
 }
 
 function paintLegend() {
-  const stops = [];
+  // Fixed across the span, so the key does not move as the years step.
+  const maxShare = market.scaleMax, stops = [];
   for (let i = 0; i <= 20; i++) {
-    const v = market.vmax * (i / 20);
-    stops.push(ramp(market.rgb, i === 0 ? 0 : shade(v, market.vmax)) + ' ' + (i * 5) + '%');
+    stops.push(ramp(market.rgb, i === 0 ? 0 : shade(maxShare * (i / 20), maxShare)) + ' ' + (i * 5) + '%');
   }
   $('#legBar').style.background = 'linear-gradient(90deg,' + stops.join(',') + ')';
-  const maxShare = 100 * market.vmax / market.total;
   $('#legMid').textContent = fmtPct(maxShare / 2);
   $('#legHi').textContent = fmtPct(maxShare);
 }
@@ -738,28 +832,29 @@ function paintPanel() {
   paintBoard();
   const src = META.sources[market.kind];
   $('#foot').innerHTML = (market.kind === 'services' ? 'Services exports, ' : 'Reported goods exports to the world, ') +
-    esc(src.year) + ', from ' + esc(src.source) + ' (retrieved ' + esc(META.fetched) + '). ' +
-    'Countries shown cover ' + market.covered + '% of the world total for this market; the rest is a long tail of ' +
+    esc(year) + ', from ' + esc(src.source) + ' (retrieved ' + esc(META.fetched) + '). ' +
+    'Countries shown cover ' + V().covered + '% of the world total for this market; the rest is a long tail of ' +
     'small exporters. Boundaries from Natural Earth.';
   wirePanel();
 }
 
 function marketHeadHTML() {
-  const m = market, top = m.rows[0];
+  const m = market, v = V(), top = v.rows[0];
   const hubs = (m.hubs || []).map(h => (CO[h] || {}).name || h);
   return `<div class="phead">
-    <span class="eyebrow">${esc(m.hs)} · ${esc(m.unit)} · ${esc(m.year)} · ${m.reporters} ${m.kind === 'services' ? 'economies with data' : 'reporting countries'}</span>
+    <span class="eyebrow">${esc(m.hs)} · ${esc(m.unit)} · ${esc(year)} · ${v.reporters} ${m.kind === 'services' ? 'economies with data' : 'reporting countries'}</span>
     <h2>${esc(m.name)}</h2>
     <p class="blurb">${esc(m.blurb)}</p>
     ${hubs.length ? (m.kind === 'services'
       ? `<p class="hubnote"><b>Booked, not earned:</b> ${esc(hubs.join(', '))} rank here largely because income is registered in their jurisdiction, not because the work was done there.</p>`
       : `<p class="hubnote"><b>Trades, not grows:</b> ${esc(hubs.join(', '))} rank here as re-exporters, refiners or processors rather than producers.</p>`) : ''}
     ${m.caveat ? `<p class="caveat">${esc(m.caveat)}</p>` : ''}
-    ${m.rows.some(r => r.mirror) ? `<p class="hubnote"><b>EST</b> marks a mirror estimate: ${esc(m.rows.filter(r => r.mirror).map(r => (CO[r.iso] || {}).name || r.iso).join(', '))} file no trade data of their own, so the figure is what the rest of the world reports importing from them.</p>` : ''}
+    ${v.rows.some(r => r.mirror) ? `<p class="hubnote"><b>EST</b> marks a mirror estimate: ${esc(v.rows.filter(r => r.mirror).map(r => (CO[r.iso] || {}).name || r.iso).join(', '))} file no trade data of their own, so the figure is what the rest of the world reports importing from them.</p>` : ''}
+    ${v.thin ? `<p class="provisional"><b>${esc(year)} is provisional.</b> Only ${v.reporters} countries have filed for this market against ${m.bestRep} in its best year, so the total is understated and exporters are missing from the map — rather than trade having fallen.</p>` : ''}
     <div class="stats">
-      <div><span class="eyebrow k">World exports</span><span class="v">${fmtVal(m.total)}</span></div>
+      <div><span class="eyebrow k">World exports</span><span class="v">${fmtVal(v.total)}</span></div>
       <div><span class="eyebrow k">Leader</span><span class="v nm hue">${esc(CO[top.iso] ? CO[top.iso].name : top.iso)}</span></div>
-      <div><span class="eyebrow k">Top 3 hold</span><span class="v">${fmtPct(m.top3)}</span></div>
+      <div><span class="eyebrow k">Top 3 hold</span><span class="v">${fmtPct(v.top3)}</span></div>
     </div>
     ${sectorHTML(m)}
   </div>`;
@@ -768,8 +863,9 @@ function marketHeadHTML() {
 // A pie of the market's own sector, its slice picked out in the market colour.
 // Slices run largest first, matching the order of the rail.
 function sectorHTML(m) {
-  const sec = SECTORS[m.group];
+  const sec = (SECTORS[year] || {})[m.group];
   if (!sec || !sec.slices.length) return '';
+  const share = +(100 * V().total / sec.denom).toFixed(2);
   const C = 30, R = 27;
   // Everything that is not this market fades into the ground it sits on, so a
   // two-per-cent sliver in the accent colour is still the first thing you see.
@@ -791,13 +887,13 @@ function sectorHTML(m) {
   let line1, line2;
   if (m.umbrella) {
     line1 = `The sector total`;
-    line2 = `${fmtVal(m.total)} — the ${sec.count} markets below are its parts`;
+    line2 = `${fmtVal(V().total)} — the ${sec.count} markets below are its parts`;
   } else if (m.parent) {
     const par = MARKETS.find(x => x.id === m.parent);
-    line1 = `<b>${fmtPct(m.share)}</b> of ${esc(m.group.toLowerCase())}`;
+    line1 = `<b>${fmtPct(share)}</b> of ${esc(m.group.toLowerCase())}`;
     line2 = `counted inside ${esc(par ? par.name : m.parent)}`;
   } else {
-    line1 = `<b>${fmtPct(m.share)}</b> of ${esc(m.group.toLowerCase())}`;
+    line1 = `<b>${fmtPct(share)}</b> of ${esc(m.group.toLowerCase())}`;
     line2 = `${fmtVal(sec.denom)} across ${sec.count} markets here`;
   }
   return `<div class="sector">
@@ -807,8 +903,8 @@ function sectorHTML(m) {
 }
 
 function dossierHTML(iso) {
-  const c = CO[iso], m = market, r = m.by[iso];
-  const others = (APPEARS[iso] || []).filter(a => a.m !== m).slice(0, 8);
+  const c = CO[iso], m = market, v = V(), r = v.by[iso];
+  const others = (appears(year)[iso] || []).filter(a => a.m !== m).slice(0, 8);
   const isHub = r && m.hub.has(iso);
   return `<div class="dossier">
     <div class="top">
@@ -818,18 +914,18 @@ function dossierHTML(iso) {
       </div>
       <button class="close" id="deselect" aria-label="Clear selection">ESC</button>
     </div>
-    ${r ? `<p class="where">Rank <b class="num">#${r.rank}</b> of ${m.rows.length} listed exporters of ${esc(m.name.toLowerCase())}</p>
+    ${r ? `<p class="where">Rank <b class="num">#${r.rank}</b> of ${v.rows.length} listed exporters of ${esc(m.name.toLowerCase())} in ${esc(year)}</p>
     <div class="stats">
       <div><span class="eyebrow k">Exports</span><span class="v">${fmtVal(r.v)}</span></div>
       <div><span class="eyebrow k">World share</span><span class="v hue">${fmtPct(r.share)}</span></div>
-      <div><span class="eyebrow k">Vs. leader</span><span class="v">${r.rank === 1 ? '—' : (r.v / m.vmax).toFixed(2) + '×'}</span></div>
+      <div><span class="eyebrow k">Vs. leader</span><span class="v">${r.rank === 1 ? '—' : (r.v / v.vmax).toFixed(2) + '×'}</span></div>
     </div>
     ${isHub ? (m.kind === 'services'
       ? `<div class="hubflag"><b>Booking centre</b> — income registered here rather than earned here</div>`
       : `<div class="hubflag"><b>Re-export hub</b> — moves ${esc(m.name.toLowerCase())} it does not produce</div>`) : ''}
     ${r.mirror ? `<div class="hubflag est"><b>Mirror estimate</b> — files no trade data, so this is what its customers report importing</div>` : ''}
     ${r.note ? `<p class="note">${esc(r.note)}</p>` : ''}`
-    : `<p class="absent">No recorded exports of ${esc(m.name.toLowerCase())}.</p>`}
+    : `<p class="absent">No recorded exports of ${esc(m.name.toLowerCase())} in ${esc(year)}.</p>`}
   </div>
   <div class="cross">
     <span class="eyebrow">Across the atlas</span>
@@ -844,8 +940,8 @@ function dossierHTML(iso) {
 
 function paintBoard() {
   const m = market;
-  $('#board').innerHTML = `<span class="eyebrow">Top exporters — ${esc(m.name.toLowerCase())}, ${esc(m.year)}</span>` +
-    m.rows.map(r => {
+  $('#board').innerHTML = `<span class="eyebrow">Top exporters — ${esc(m.name.toLowerCase())}, ${esc(year)}</span>` +
+    V().rows.map(r => {
       const c = CO[r.iso];
       return `<button class="row" data-iso="${esc(r.iso)}"${selected === r.iso ? ' data-sel' : ''}>
         <span class="fill" style="width:${r.barPct.toFixed(1)}%"></span>
@@ -899,7 +995,7 @@ const tip = $('#tip'), stage = $('#stage');
 function showTip(e) {
   const t = e.target.closest('[data-iso]');
   if (!t) return hideTip();
-  const iso = t.dataset.iso, c = CO[iso], r = market.by[iso];
+  const iso = t.dataset.iso, c = CO[iso], r = V().by[iso];
   if (!c) return hideTip();
   setHover(iso);
   tip.innerHTML = `<b>${esc(c.name)}</b>` + (r
@@ -931,10 +1027,64 @@ for (const m of MARKETS) {
   b.dataset.id = m.id;
   b.style.setProperty('--c', m.color);
   b.setAttribute('aria-pressed', 'false');
-  b.title = `${m.name} — ${fmtVal(m.total)} of world exports, ${m.year}`;
-  b.innerHTML = `<span class="dot"></span><span class="nm">${esc(m.emoji)} ${esc(m.name)}</span><span class="sz">${fmtVal(m.total)}</span>`;
+  b.innerHTML = `<span class="dot"></span><span class="nm">${esc(m.emoji)} ${esc(m.name)}</span><span class="sz"></span>`;
   b.onclick = () => setMarket(m, true);
   rail.appendChild(b);
+}
+
+/* ---- year strip ---------------------------------------------------------- */
+const yearBar = $('#years');
+let playing = 0;
+
+function paintYears() {
+  const btns = META.years.map(y => {
+    const d = market.years[y];
+    const on = y === year;
+    const thin = d && d.reporters < market.bestRep * 0.9;
+    const label = d
+      ? `${market.name}, ${y}: ${fmtVal(d.total)} from ${d.reporters} reporters${thin ? ' — provisional' : ''}`
+      : `No ${market.name} data for ${y}`;
+    return `<button data-y="${y}" aria-pressed="${on}"${d ? '' : ' disabled'}` +
+      ` class="${thin ? 'thin' : ''}" title="${esc(label)}">${y}</button>`;
+  }).join('');
+  yearBar.innerHTML = `<button class="play" id="play" title="Play through the years"${playing ? ' data-on=""' : ''}>` +
+    `${playing ? '❚❚' : '▶'}</button>` + btns;
+
+  $('#play').onclick = () => (playing ? stopPlay() : startPlay());
+  for (const b of yearBar.querySelectorAll('button[data-y]')) b.onclick = () => setYear(b.dataset.y);
+
+  // Keep the rail's figures on the year being shown.
+  for (const b of $('#markets').querySelectorAll('.mkt')) {
+    const m = MARKETS.find(x => x.id === b.dataset.id);
+    const d = m && m.years[year];
+    b.querySelector('.sz').textContent = d ? fmtVal(d.total) : '—';
+    b.title = d ? `${m.name} — ${fmtVal(d.total)} of world exports, ${year}` : `${m.name} — no data for ${year}`;
+  }
+}
+
+function startPlay() {
+  const has = META.years.filter(y => market.years[y]);
+  if (has.length < 2) return;
+  // Starting from the end would show one frame and stop.
+  if (year === has[has.length - 1]) setYear(has[0], true);
+  playing = setInterval(() => {
+    const i = has.indexOf(year);
+    if (i >= has.length - 1) { stopPlay(); return; }
+    setYear(has[i + 1], true);
+  }, REDUCED ? 2200 : 1250);
+  paintYears();
+}
+function stopPlay() {
+  if (!playing) return;
+  clearInterval(playing);
+  playing = 0;
+  paintYears();
+}
+function stepYear(delta) {
+  const has = META.years.filter(y => market.years[y]);
+  const i = has.indexOf(year);
+  if (i < 0) return;
+  setYear(has[Math.min(has.length - 1, Math.max(0, i + delta))]);
 }
 
 /* ---- country search ------------------------------------------------------ */
@@ -969,7 +1119,10 @@ q.onkeydown = (e) => {
 addEventListener('keydown', (e) => {
   if (e.target.tagName === 'INPUT') return;
   const step = VB.w * 0.06 / k;
-  if (e.key === 'Escape') select(null);
+  if (e.key === 'Escape') { select(null); stopPlay(); }
+  else if (e.key === '[' || e.key === ',') stepYear(-1);
+  else if (e.key === ']' || e.key === '.') stepYear(1);
+  else if (e.key === ' ') (playing ? stopPlay() : startPlay());
   else if (e.key === '+' || e.key === '=') zoomAt(VB.x + VB.w / 2, VB.y + VB.h / 2, k * 1.4);
   else if (e.key === '-' || e.key === '_') zoomAt(VB.x + VB.w / 2, VB.y + VB.h / 2, k / 1.4);
   else if (e.key === '0') flyTo(VB.x + VB.w / 2, VB.y + VB.h / 2, 1);
@@ -982,7 +1135,7 @@ addEventListener('keydown', (e) => {
 });
 
 /* ---- go ------------------------------------------------------------------ */
-$('#dek').textContent = `${MARKETS.length} markets, and who the world buys them from.`;
+$('#dek').textContent = `${MARKETS.length} markets, ${META.years[0]}–${META.years[META.years.length - 1]}.`;
 apply();
 setMarket(MARKETS.find(m => m.id === META.defaultMarket) || MARKETS[0]);
 </script>
