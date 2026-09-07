@@ -31,6 +31,15 @@ const MARKETS = {
   platinum: { hs: '7110' }, nickel: { hs: '2604,7502,720260' }, plastics: { hs: '39' },
   rareearth: { hs: '284690' }, chipgear: { hs: '8486' }, medical: { hs: '9018' },
   footwear: { hs: '64' }, cosmetics: { hs: '33' },
+  // --- fourth pass -----------------------------------------------------------
+  sunflower: { hs: '1512' }, nuts: { hs: '0801,0802' }, citrus: { hs: '0805' },
+  barley: { hs: '1003' }, lamb: { hs: '0204' }, butter: { hs: '0405' },
+  formula: { hs: '190110' }, biofuel: { hs: '2207,3826' }, silver: { hs: '7106' },
+  lithium: { hs: '283691' }, graphite: { hs: '2504' }, cement: { hs: '2523' },
+  robots: { hs: '847950' }, telecom: { hs: '851762' }, wind: { hs: '850231' },
+  carparts: { hs: '8708' }, tyres: { hs: '4011' }, cigarettes: { hs: '2402' },
+  furniture: { hs: '94' }, arms: { hs: '93' },
+  spacecraft: { hs: '880260' },
 
   // --- services ------------------------------------------------------------
   // UN Comtrade's own services database is unusable for a world map: the United

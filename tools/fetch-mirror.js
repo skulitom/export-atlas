@@ -85,7 +85,29 @@ const PAIRS = {
   chipgear: [R],
   medical: [R, 'BLR'],
   footwear: [R, 'BLR', 'MMR'],
-  cosmetics: [R, 'BLR', 'IRN']
+  cosmetics: [R, 'BLR', 'IRN'],
+  // --- fourth pass -----------------------------------------------------------
+  sunflower: [R, 'BLR'],
+  nuts: [R, 'IRN', 'SYR'],
+  citrus: [R, 'IRN', 'SYR'],
+  barley: [R, 'BLR', 'SYR'],
+  lamb: [R, 'SYR'],
+  butter: [R, 'BLR'],
+  formula: [R, 'BLR'],
+  biofuel: [R, 'BLR'],
+  silver: [R, 'BLR'],
+  lithium: [R],
+  graphite: [R, 'MMR'],
+  cement: [R, 'IRN', 'BLR', 'SYR'],
+  robots: [R],
+  telecom: [R, 'BLR'],
+  wind: [R],
+  carparts: [R, 'BLR', 'IRN'],
+  tyres: [R, 'BLR', 'IRN'],
+  cigarettes: [R, 'BLR', 'SYR'],
+  furniture: [R, 'BLR'],
+  arms: [R, 'BLR', 'IRN'],
+  spacecraft: [R, 'IRN']
 };
 
 const reporters = JSON.parse(fs.readFileSync(path.join(RAW, 'reporters.json'), 'utf8')).results;

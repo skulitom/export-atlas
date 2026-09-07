@@ -1,7 +1,7 @@
 # Export Atlas
 
 An interactive dark-mode world map of who sells the world its stuff. Pick one of
-sixty-six markets — sixty in goods, six in services — and the map floods with
+eighty-seven markets — eighty-one in goods, six in services — and the map floods with
 that market's own colour —
 the deeper the shade, the larger that country's share of world exports. Click any
 country for its rank, its share, a note on why it matters, and every other market
@@ -18,22 +18,23 @@ offline.
 
 ## The markets
 
-Sixty-six, grouped in the rail and sorted largest-first inside each group:
+Eighty-seven, grouped in the rail and sorted largest-first inside each group:
 
 | | |
 |---|---|
-| **Agriculture** (19) | Soybeans · Wheat · Maize · Palm oil · Coffee · Sugar · Timber · Rice · Cotton · Bananas · Rubber · Olive oil · Tobacco · Cut flowers · Cocoa · Tea · Avocados · Wool · Vanilla |
-| **Food & drink** (9) | Fish & seafood · Beef · Cheese · Spirits · Wine · Chocolate · Pork · Poultry · Beer |
-| **Energy** (6) | Crude oil · Refined petroleum · Natural gas & LNG · Coal · Electricity · Uranium & nuclear fuel |
-| **Minerals & materials** (11) | Plastics · Gold · Steel · Copper · Iron ore · Diamonds · Fertiliser · Aluminium · Platinum & palladium · Nickel · Rare earths |
-| **Technology** (7) | Semiconductors · Computers · Smartphones · Medical instruments · Lithium-ion batteries · Chipmaking machines · Solar panels |
-| **Manufactured** (8) | Cars · Pharmaceuticals · Clothing · Perfume & cosmetics · Footwear · Aircraft · Ships · Watches |
-| **Services** (6) | Commercial services · Travel & tourism · Transport & freight · Finance & insurance · Computing & business services · Intellectual property |
+| **Agriculture** (23) | Soybeans · Wheat · Maize · Palm Oil · Coffee · Sugar · Sawn Timber · Rice · Nuts · Sunflower Oil · Cotton · Citrus · Bananas · Natural Rubber · Olive Oil · Tobacco Leaf · Barley · Cut Flowers · Cocoa Beans · Tea · Avocados · Wool · Vanilla |
+| **Food & drink** (12) | Fish & Seafood · Beef · Cheese · Spirits · Wine · Chocolate · Pork · Poultry · Beer · Butter · Infant Formula · Lamb & Mutton |
+| **Energy** (7) | Crude Oil · Refined Petroleum · Natural Gas & LNG · Coal · Electricity · Biofuels · Uranium & Nuclear Fuel |
+| **Minerals & materials** (15) | Plastics · Gold · Steel · Copper · Iron Ore · Diamonds · Fertiliser · Aluminium · Platinum & Palladium · Nickel · Silver · Cement · Lithium · Rare Earths · Graphite |
+| **Technology** (10) | Semiconductors · Computers · Smartphones · Telecom Equipment · Medical Instruments · Lithium-ion Batteries · Chipmaking Machines · Solar Panels · Industrial Robots · Wind Turbines |
+| **Manufactured** (14) | Cars · Pharmaceuticals · Clothing · Car Parts · Furniture · Perfume & Cosmetics · Footwear · Aircraft · Tyres · Ships · Watches · Cigarettes · Arms & Ammunition · Spacecraft & Satellites |
+| **Services** (6) | Commercial Services · Computing & Business Services · Travel & Tourism · Transport & Freight · Finance & Insurance · Intellectual Property |
 
 Cocoa and chocolate are deliberately both here, as are crude oil and refined
 petroleum, and cotton and clothing. Each pair is the same commodity at two
-stages, and the maps are barely recognisable as the same trade. So are cotton
-and clothing, iron ore and steel, and rubber against the tyres it becomes. The
+stages, and the maps are barely recognisable as the same trade. So are cotton and clothing, iron ore and
+steel, tobacco leaf and cigarettes, rubber and tyres, cars and car parts, and
+lithium and the batteries it ends up in. The
 services maps are a third thing again: nothing is loaded onto a ship, and the countries
 that win are mostly not the ones that win at goods.
 

@@ -11,7 +11,7 @@ const read = (...p) => JSON.parse(fs.readFileSync(here(...p), 'utf8'));
 
 const geo = read('data', 'geo.json');
 const trade = read('data', 'trade.json');
-const editorial = ['a', 'b', 'c', 'd', 'e', 'f'].flatMap(x => require(`./src/markets-${x}.js`));
+const editorial = ['a', 'b', 'c', 'd', 'e', 'f', 'g'].flatMap(x => require(`./src/markets-${x}.js`));
 
 // The rail is grouped in this order, and within each group the markets run
 // largest first - so the sequence follows the data rather than a hand-kept list.

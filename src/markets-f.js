@@ -2,7 +2,7 @@
 
 module.exports = [
 {
-  id: "tobacco", name: "Tobacco Leaf", emoji: "🚬",
+  id: "tobacco", name: "Tobacco Leaf", emoji: "🍂",
   hs: "HS 2401", unit: "unmanufactured leaf", color: "#9c7b4a", group: "Agriculture",
   blurb: "Raw leaf, not cigarettes — and the map looks nothing like a map of who smokes. Brazil and Zimbabwe grow it for export while the manufacturing and the margin sit somewhere else entirely. In Malawi and Zimbabwe tobacco has been the largest single export for decades, which makes falling Western demand a fiscal problem as much as a health one.",
   hubs: ["BEL", "NLD", "DEU"],
@@ -21,7 +21,7 @@ module.exports = [
   }
 },
 {
-  id: "rubber", name: "Natural Rubber", emoji: "🛞",
+  id: "rubber", name: "Natural Rubber", emoji: "🌳",
   hs: "HS 4001", unit: "latex + sheet", color: "#7fa3a0", group: "Agriculture",
   blurb: "Every truck and aircraft tyre still depends on trees. Synthetic rubber cannot match natural latex for heat resistance and tear strength, so the material has no substitute at the heavy end — and almost all of the trees are in Southeast Asia, descended from seeds taken out of the Amazon in 1876.",
   hubs: ["SGP"],

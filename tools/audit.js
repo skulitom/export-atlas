@@ -31,7 +31,7 @@ const mirrors = (y) => {
   return fs.existsSync(f) ? JSON.parse(fs.readFileSync(f, 'utf8')) : {};
 };
 
-const editorial = ['a', 'b', 'c', 'd', 'e', 'f'].flatMap(x => require(path.join(root, 'src', `markets-${x}.js`)));
+const editorial = ['a', 'b', 'c', 'd', 'e', 'f', 'g'].flatMap(x => require(path.join(root, 'src', `markets-${x}.js`)));
 const geoIds = new Set(JSON.parse(fs.readFileSync(path.join(root, 'data', 'geo.json'), 'utf8')).map(c => c.id));
 
 // --- services: World Bank series -------------------------------------------
