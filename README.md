@@ -179,10 +179,20 @@ tools/overrides.js     the documented exceptions to "use what was reported"
 tools/                 fetch, audit and geometry scripts
 ```
 
-Adding a market takes three edits: its HS code or World Bank indicator in
-`tools/markets-meta.js`, an entry in one of the `src/markets-*.js` files, and its
-id in the `ORDER` list in `build.js` that fixes where it sits in the rail. The
-build refuses to run if those three disagree.
+Adding a market takes two edits: its HS code or World Bank indicator in
+`tools/markets-meta.js`, and an entry in one of the `src/markets-*.js` files
+naming its group. Where it lands in the rail follows from the data — groups run
+in the fixed order set in `build.js`, and within a group the markets sort by
+world export value. The build refuses to run on a market whose group it does not
+recognise, or that has no figures behind it.
+
+The summary panel shows each market's slice of its own sector as a pie, with the
+other markets in that group as the remaining slices — clicking one switches to
+it. Two services markets overlap the rest and are excluded from the slices, since
+including them would double-count: Commercial Services is the sum of the others,
+and Intellectual Property is counted inside Computing & Business Services. Both
+are declared in `src/markets-e.js` (`umbrella` and `partOf`) and both still show
+an honest share of the same denominator.
 
 The split is deliberate: `src/markets-*.js` holds nothing but prose and colour,
 and every number lives in `data/trade.json`. A person edits one, a script

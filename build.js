@@ -13,29 +13,28 @@ const geo = read('data', 'geo.json');
 const trade = read('data', 'trade.json');
 const editorial = ['a', 'b', 'c', 'd', 'e'].flatMap(x => require(`./src/markets-${x}.js`));
 
-// The rail is grouped, so the running order is declared here rather than being
-// an accident of which file a market happens to live in.
-const ORDER = [
-  'cocoa', 'coffee', 'tea', 'sugar', 'bananas', 'olive', 'wheat', 'maize',
-  'rice', 'soy', 'palm', 'cotton', 'flowers',
-  'chocolate', 'wine', 'spirits', 'cheese', 'beef', 'fish',
-  'crude', 'refined', 'gas', 'coal',
-  'gold', 'diamonds', 'copper', 'ironore', 'aluminium', 'fertiliser',
-  'chips', 'phones', 'computers', 'batteries', 'solar',
-  'cars', 'aircraft', 'ships', 'apparel', 'watches', 'pharma',
-  'services', 'travel', 'transport', 'insfin', 'othersvc', 'royalties'
+// The rail is grouped in this order, and within each group the markets run
+// largest first - so the sequence follows the data rather than a hand-kept list.
+const GROUPS = [
+  'Agriculture', 'Food & drink', 'Energy', 'Minerals & materials',
+  'Technology', 'Manufactured', 'Services'
 ];
+// What the app selects on load. The rail starts with the largest market in the
+// first group; this is simply the most striking one to open on.
+const DEFAULT_MARKET = 'cocoa';
 
 const problems = [];
 const warnings = [];
 const geoIds = new Set(geo.map(c => c.id));
 
 {
-  const listed = new Set(ORDER), have = new Set(editorial.map(m => m.id));
-  for (const id of ORDER) if (!have.has(id)) { console.error(`ORDER names ${id}, which no markets file defines`); process.exit(1); }
-  for (const m of editorial) if (!listed.has(m.id)) { console.error(`${m.id} is defined but missing from ORDER`); process.exit(1); }
-  if (ORDER.length !== new Set(ORDER).size) { console.error('ORDER contains a duplicate'); process.exit(1); }
-  editorial.sort((a, b) => ORDER.indexOf(a.id) - ORDER.indexOf(b.id));
+  for (const m of editorial) {
+    if (!GROUPS.includes(m.group)) { console.error(`${m.id}: group "${m.group}" is not in GROUPS`); process.exit(1); }
+    if (!trade.markets[m.id]) { console.error(`${m.id}: no entry in data/trade.json`); process.exit(1); }
+  }
+  if (!editorial.some(m => m.id === DEFAULT_MARKET)) { console.error(`DEFAULT_MARKET ${DEFAULT_MARKET} is not defined`); process.exit(1); }
+  const size = (m) => trade.markets[m.id].total;
+  editorial.sort((a, b) => GROUPS.indexOf(a.group) - GROUPS.indexOf(b.group) || size(b) - size(a));
 }
 
 const markets = editorial.map(m => {
@@ -71,6 +70,7 @@ const markets = editorial.map(m => {
   return {
     id: m.id, name: m.name, emoji: m.emoji, hs: m.hs, unit: m.unit, color: m.color,
     group: m.group, blurb: m.blurb, caveat: m.caveat || null, hubs,
+    umbrella: m.umbrella || false, parent: m.partOf || null,
     kind: t.kind, year: t.year, total: t.total, reporters: t.reporters,
     covered: +(100 * sum / t.total).toFixed(1),
     exporters
@@ -90,17 +90,39 @@ if (warnings.length) {
   if (unused.length) console.warn(`notes unused (${unused.length}): ` + unused.map(w => w.split(' ')[0] + w.split(' ')[3]).join(' '));
 }
 
+// --- sector composition ----------------------------------------------------
+// A pie of each group needs slices that do not overlap. Two services markets do:
+// Commercial Services is the sum of the others, and Intellectual Property is
+// counted inside Computing & Business Services. Both are excluded from the
+// slices, and each still gets an honest share of the same denominator.
+const sectors = {};
+for (const g of GROUPS) {
+  const inGroup = markets.filter(m => m.group === g);
+  const slices = inGroup.filter(m => !m.umbrella && !m.parent);
+  const denom = slices.reduce((s, m) => s + m.total, 0);
+  sectors[g] = {
+    denom: +denom.toFixed(3),
+    count: slices.length,
+    slices: slices.map(m => ({ id: m.id, name: m.name, color: m.color, total: m.total }))
+  };
+}
+for (const m of markets) {
+  // The umbrella market is the sector, so a share of it is not a meaningful number.
+  m.share = m.umbrella ? null : +(100 * m.total / sectors[m.group].denom).toFixed(2);
+}
+
 // --- inline ----------------------------------------------------------------
 // Embedding as a JSON string literal parses faster than an object literal and
 // sidesteps every quoting question except the closing-tag one.
 const lit = (v) => JSON.stringify(JSON.stringify(v)).replace(/<\//g, '<\\/');
 
-const meta = { sources: trade.sources, fetched: trade.fetched };
+const meta = { sources: trade.sources, fetched: trade.fetched, defaultMarket: DEFAULT_MARKET };
 
 const tpl = fs.readFileSync(here('src', 'app.html'), 'utf8')
   .replace('__GEO__', () => lit(geo))
   .replace('__MARKETS__', () => lit(markets))
-  .replace('__META__', () => lit(meta));
+  .replace('__META__', () => lit(meta))
+  .replace('__SECTORS__', () => lit(sectors));
 
 fs.writeFileSync(here('artifact.html'), tpl);
 fs.writeFileSync(here('index.html'),

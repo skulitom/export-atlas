@@ -9,6 +9,7 @@ module.exports = [
 {
   id: "services", name: "Commercial Services", emoji: "🧾",
   hs: "BoP services, total", unit: "all services", color: "#9aa7b8", group: "Services",
+  umbrella: true,
   blurb: "Services are about a quarter of world trade and the fastest-growing quarter, and the map barely resembles the goods maps. Nothing is loaded onto a ship: this is consultancy billed across a border, a tourist's hotel bill, a licence fee, a container booked in Singapore. Ireland ranks fourth in the world on it, from a population of five million.",
   hubs: ["IRL", "NLD", "LUX"],
   notes: {
@@ -117,6 +118,7 @@ module.exports = [
 {
   id: "royalties", name: "Intellectual Property", emoji: "💡",
   hs: "BoP · IP charges", unit: "licence + royalty receipts", color: "#b98cf0", group: "Services",
+  partOf: "othersvc",
   blurb: "Payments for the right to use somebody else's patent, brand, software or film. It is the purest measure of who owns ideas rather than who makes things — and the most distorted, because a licence can be assigned to a subsidiary in a low-tax country and collected there. That is most of why the Netherlands, Switzerland and Ireland stand so far above their size.",
   hubs: ["NLD", "IRL", "CHE", "SGP"],
   notes: {

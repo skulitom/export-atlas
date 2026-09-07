@@ -279,6 +279,20 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 .stats .v.hue { color: var(--mk); }
 .stats .v.nm { font-family: var(--font-ui); font-size: 13.5px; }
 
+.sector {
+  display: flex; align-items: center; gap: 13px;
+  margin-top: 12px; padding-top: 12px;
+  border-top: 1px solid var(--rule);
+}
+.sector svg { flex: none; display: block; overflow: visible; }
+.wedge { stroke: var(--surface); stroke-width: .6; transition: opacity .15s ease; cursor: pointer; }
+.sector svg:hover .wedge { opacity: .45; }
+.sector svg:hover .wedge:hover { opacity: 1; }
+.sector svg .wedge.on { opacity: 1; stroke: var(--ink-bright); stroke-width: .9; }
+.secmeta { font-size: 12.5px; line-height: 1.4; color: var(--ink-dim); }
+.secmeta b { font-family: var(--font-mono); font-size: 16px; font-weight: 500; color: var(--mk); }
+.secmeta .sub { display: block; font-size: 10.5px; color: var(--ink-faint); margin-top: 3px; }
+
 /* leaderboard */
 .board { padding: 12px 0 24px; }
 .board > .eyebrow { display: block; padding: 0 18px 7px; }
@@ -439,10 +453,11 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 const GEO = JSON.parse(__GEO__);
 const MARKETS = JSON.parse(__MARKETS__);
 const META = JSON.parse(__META__);
+const SECTORS = JSON.parse(__SECTORS__);
 const RENAME = {
   USA: 'United States', CIV: "Côte d'Ivoire", COD: 'DR Congo',
   COG: 'Congo-Brazzaville', CZE: 'Czechia', GBR: 'United Kingdom',
-  ARE: 'United Arab Emirates', FRO: 'Faroe Islands', LAO: 'Laos'
+  ARE: 'United Arab Emirates', FRO: 'Faroe Islands', LAO: 'Laos', CHN: 'China'
 };
 
 const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -746,6 +761,48 @@ function marketHeadHTML() {
       <div><span class="eyebrow k">Leader</span><span class="v nm hue">${esc(CO[top.iso] ? CO[top.iso].name : top.iso)}</span></div>
       <div><span class="eyebrow k">Top 3 hold</span><span class="v">${fmtPct(m.top3)}</span></div>
     </div>
+    ${sectorHTML(m)}
+  </div>`;
+}
+
+// A pie of the market's own sector, its slice picked out in the market colour.
+// Slices run largest first, matching the order of the rail.
+function sectorHTML(m) {
+  const sec = SECTORS[m.group];
+  if (!sec || !sec.slices.length) return '';
+  const C = 30, R = 27;
+  // Everything that is not this market fades into the ground it sits on, so a
+  // two-per-cent sliver in the accent colour is still the first thing you see.
+  const NEUTRAL = ['#3a4854', '#333f4a', '#2c3742', '#252f39'];
+  const lit = m.umbrella ? null : (m.parent || m.id);
+
+  let a = -Math.PI / 2;
+  const wedges = sec.slices.map((sl, i) => {
+    const on = sl.id === lit;
+    const r = on ? R : R * 0.88;
+    const a1 = a + (sl.total / sec.denom) * Math.PI * 2;
+    const p = (ang, rad) => (C + rad * Math.cos(ang)).toFixed(2) + ' ' + (C + rad * Math.sin(ang)).toFixed(2);
+    const d = `M${C} ${C}L${p(a, r)}A${r} ${r} 0 ${a1 - a > Math.PI ? 1 : 0} 1 ${p(a1, r)}Z`;
+    a = a1;
+    return `<path class="wedge${on ? ' on' : ''}" d="${d}" fill="${on ? m.color : NEUTRAL[i % NEUTRAL.length]}"` +
+      ` data-mkt="${esc(sl.id)}"><title>${esc(sl.name)} — ${fmtVal(sl.total)}</title></path>`;
+  }).join('');
+
+  let line1, line2;
+  if (m.umbrella) {
+    line1 = `The sector total`;
+    line2 = `${fmtVal(m.total)} — the ${sec.count} markets below are its parts`;
+  } else if (m.parent) {
+    const par = MARKETS.find(x => x.id === m.parent);
+    line1 = `<b>${fmtPct(m.share)}</b> of ${esc(m.group.toLowerCase())}`;
+    line2 = `counted inside ${esc(par ? par.name : m.parent)}`;
+  } else {
+    line1 = `<b>${fmtPct(m.share)}</b> of ${esc(m.group.toLowerCase())}`;
+    line2 = `${fmtVal(sec.denom)} across ${sec.count} markets here`;
+  }
+  return `<div class="sector">
+    <svg viewBox="0 0 60 60" width="62" height="62" role="img" aria-label="Share of ${esc(m.group)}">${wedges}</svg>
+    <div class="secmeta">${line1}<span class="sub">${line2}</span></div>
   </div>`;
 }
 
@@ -803,6 +860,9 @@ function paintBoard() {
 function wirePanel() {
   const d = $('#deselect');
   if (d) d.onclick = () => select(null);
+  for (const w of document.querySelectorAll('.wedge')) {
+    w.onclick = () => { const t = MARKETS.find(x => x.id === w.dataset.mkt); if (t) setMarket(t, true); };
+  }
   for (const b of document.querySelectorAll('.cross button')) {
     b.onclick = () => setMarket(MARKETS.find(m => m.id === b.dataset.mkt), true);
   }
@@ -924,5 +984,5 @@ addEventListener('keydown', (e) => {
 /* ---- go ------------------------------------------------------------------ */
 $('#dek').textContent = `${MARKETS.length} markets, and who the world buys them from.`;
 apply();
-setMarket(MARKETS[0]);
+setMarket(MARKETS.find(m => m.id === META.defaultMarket) || MARKETS[0]);
 </script>
