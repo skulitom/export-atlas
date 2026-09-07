@@ -15,7 +15,7 @@ offline.
 
 ## The markets
 
-Forty, grouped in the rail:
+Forty-six, grouped in the rail and sorted largest-first inside each group:
 
 | | |
 |---|---|
