@@ -249,7 +249,7 @@ module.exports = [
 },
 {
   id: "nickel", name: "Nickel", emoji: "🪙",
-  hs: "HS 2604 + 7502", unit: "ore + refined metal", color: "#b9c9a8", group: "Minerals & materials",
+  hs: "HS 2604 + 7502 + 7202.60", unit: "ore, metal, ferronickel", color: "#b9c9a8", group: "Minerals & materials",
   blurb: "Two thirds of nickel goes into stainless steel and a fast-growing remainder into batteries — and Indonesia has reorganised the entire market around itself. It banned raw ore exports outright in 2020 to force smelting onshore, and within a few years was supplying more than half the world.",
   hubs: ["NLD", "JPN"],
   notes: {
