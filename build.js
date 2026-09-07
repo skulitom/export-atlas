@@ -11,7 +11,7 @@ const read = (...p) => JSON.parse(fs.readFileSync(here(...p), 'utf8'));
 
 const geo = read('data', 'geo.json');
 const trade = read('data', 'trade.json');
-const editorial = ['a', 'b', 'c', 'd'].flatMap(x => require(`./src/markets-${x}.js`));
+const editorial = ['a', 'b', 'c', 'd', 'e'].flatMap(x => require(`./src/markets-${x}.js`));
 
 // The rail is grouped, so the running order is declared here rather than being
 // an accident of which file a market happens to live in.
@@ -22,7 +22,8 @@ const ORDER = [
   'crude', 'refined', 'gas', 'coal',
   'gold', 'diamonds', 'copper', 'ironore', 'aluminium', 'fertiliser',
   'chips', 'phones', 'computers', 'batteries', 'solar',
-  'cars', 'aircraft', 'ships', 'apparel', 'watches', 'pharma'
+  'cars', 'aircraft', 'ships', 'apparel', 'watches', 'pharma',
+  'services', 'travel', 'transport', 'insfin', 'othersvc', 'royalties'
 ];
 
 const problems = [];
@@ -70,7 +71,7 @@ const markets = editorial.map(m => {
   return {
     id: m.id, name: m.name, emoji: m.emoji, hs: m.hs, unit: m.unit, color: m.color,
     group: m.group, blurb: m.blurb, caveat: m.caveat || null, hubs,
-    year: trade.year, total: t.total, reporters: t.reporters,
+    kind: t.kind, year: t.year, total: t.total, reporters: t.reporters,
     covered: +(100 * sum / t.total).toFixed(1),
     exporters
   };
@@ -94,7 +95,7 @@ if (warnings.length) {
 // sidesteps every quoting question except the closing-tag one.
 const lit = (v) => JSON.stringify(JSON.stringify(v)).replace(/<\//g, '<\\/');
 
-const meta = { year: trade.year, source: trade.source, fetched: trade.fetched };
+const meta = { sources: trade.sources, fetched: trade.fetched };
 
 const tpl = fs.readFileSync(here('src', 'app.html'), 'utf8')
   .replace('__GEO__', () => lit(geo))
@@ -105,12 +106,13 @@ fs.writeFileSync(here('artifact.html'), tpl);
 fs.writeFileSync(here('index.html'),
   '<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n' +
   '<meta name="viewport" content="width=device-width,initial-scale=1">\n' +
-  `<meta name="description" content="An interactive dark-mode world map of who exports what, across ${markets.length} commodity markets. Figures from UN Comtrade, ${trade.year}.">\n` +
+  `<meta name="description" content="An interactive dark-mode world map of who exports what, across ${markets.length} markets in goods and services. Figures for ${trade.sources.goods.year}.">\n` +
   tpl.replace('</style>', '</style>\n</head>\n<body>') +
   '\n</body>\n</html>\n');
 
 const kb = (f) => (fs.statSync(here(f)).size / 1024).toFixed(0) + ' KB';
 const mir = markets.reduce((n, m) => n + m.exporters.filter(e => e[3]).length, 0);
 console.log(`built  index.html ${kb('index.html')}   artifact.html ${kb('artifact.html')}`);
-console.log(`       ${markets.length} markets · ${trade.year} · ${markets.reduce((a, m) => a + m.exporters.length, 0)} country entries ` +
+const svc = markets.filter(m => m.kind === 'services').length;
+console.log(`       ${markets.length} markets (${markets.length - svc} goods, ${svc} services) · ${markets.reduce((a, m) => a + m.exporters.length, 0)} country entries ` +
   `(${mir} mirror-estimated) · ${geo.length} countries drawn`);

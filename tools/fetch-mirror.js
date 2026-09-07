@@ -17,20 +17,7 @@ const RAW = path.join(root, 'build', 'raw');
 const YEAR = process.argv[2] || '2023';
 const FORCE = require('./overrides.js').forceMirror;
 
-const CODES = {
-  cocoa: '1801', coffee: '0901', tea: '0902', crude: '2709', gas: '2711',
-  chips: '8542', cars: '8703', wine: '2204', pharma: '30', gold: '7108',
-  wheat: '1001', rice: '1006', palm: '1511', bananas: '0803', fish: '03',
-  diamonds: '7102', copper: '2603,7403', batteries: '850760',
-  apparel: '61,62', flowers: '0603',
-  // --- added in the second pass ---------------------------------------------
-  chocolate: '1806', soy: '1201', beef: '0201,0202', cheese: '0406',
-  sugar: '1701', olive: '1509', spirits: '2208', maize: '1005',
-  cotton: '5201', refined: '2710', coal: '2701', ironore: '2601',
-  aluminium: '7601', fertiliser: '31', phones: '851712,851713',
-  computers: '8471', aircraft: '8802', ships: '8901',
-  solar: '854140,854143', watches: '9101,9102'
-};
+const { codeOf, kindOf } = require('./markets-meta.js');
 
 // Countries worth mirroring, per market. Only pairs that are actually missing
 // from the reported data get fetched.
@@ -102,6 +89,9 @@ async function get(url, tries = 6) {
   if (fs.existsSync(outFile)) Object.assign(out, JSON.parse(fs.readFileSync(outFile, 'utf8')));
 
   for (const [market, isos] of Object.entries(PAIRS)) {
+    // Services are reported against the world, not against partners, so there
+    // is nothing to mirror them with.
+    if (kindOf(market) === 'services') continue;
     // Skip anything the country already reported itself.
     const reportedFile = path.join(RAW, `${market}-${YEAR}.json`);
     const reported = new Set();
@@ -118,7 +108,7 @@ async function get(url, tries = 6) {
       if (!M49[iso]) { console.log(`??    ${key} — no M49 code`); continue; }
       const q = new URLSearchParams({
         reporterCode: importerCodes.join(','), period: YEAR, partnerCode: String(M49[iso]),
-        partner2Code: '0', cmdCode: CODES[market], flowCode: 'M', customsCode: 'C00', motCode: '0'
+        partner2Code: '0', cmdCode: codeOf(market), flowCode: 'M', customsCode: 'C00', motCode: '0'
       });
       try {
         const j = await get('https://comtradeapi.un.org/public/v1/preview/C/A/HS?' + q);

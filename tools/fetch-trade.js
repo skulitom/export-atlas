@@ -2,28 +2,17 @@
 // API (no key required) and caches one JSON file per market-year under
 // build/raw/. Safe to re-run: existing files are skipped.
 //
-//   node tools/fetch-trade.js [year ...]
+// Goods come from the HS commodity database, services from the EBOPS balance of
+// payments database; tools/markets-meta.js says which is which.
+//
+//   node tools/fetch-trade.js                 every market, its own useful years
+//   node tools/fetch-trade.js 2022 2023       those years, every market
 const fs = require('fs');
 const path = require('path');
+const { MARKETS, FETCH_YEARS, kindOf, codeOf, endpoint } = require('./markets-meta.js');
 
 const RAW = path.join(__dirname, '..', 'build', 'raw');
 fs.mkdirSync(RAW, { recursive: true });
-
-// HS codes each market is measured on. Comma lists are summed per reporter.
-const CODES = {
-  cocoa: '1801', coffee: '0901', tea: '0902', crude: '2709', gas: '2711',
-  chips: '8542', cars: '8703', wine: '2204', pharma: '30', gold: '7108',
-  wheat: '1001', rice: '1006', palm: '1511', bananas: '0803', fish: '03',
-  diamonds: '7102', copper: '2603,7403', batteries: '850760',
-  apparel: '61,62', flowers: '0603',
-  // --- added in the second pass ---------------------------------------------
-  chocolate: '1806', soy: '1201', beef: '0201,0202', cheese: '0406',
-  sugar: '1701', olive: '1509', spirits: '2208', maize: '1005',
-  cotton: '5201', refined: '2710', coal: '2701', ironore: '2601',
-  aluminium: '7601', fertiliser: '31', phones: '851712,851713',
-  computers: '8471', aircraft: '8802', ships: '8901',
-  solar: '854140,854143', watches: '9101,9102'
-};
 
 const reporters = JSON.parse(fs.readFileSync(path.join(RAW, 'reporters.json'), 'utf8')).results;
 // Comtrade has no Taiwan reporter; its trade is filed as "Other Asia, nes" (490),
@@ -42,22 +31,23 @@ async function get(url, tries = 6) {
   throw new Error('gave up after ' + tries + ' tries: ' + url);
 }
 
-function url(cmd, year) {
-  const q = new URLSearchParams({
-    reporterCode: codes.join(','), period: String(year), partnerCode: '0',
-    partner2Code: '0', cmdCode: cmd, flowCode: 'X', customsCode: 'C00', motCode: '0'
-  });
-  return 'https://comtradeapi.un.org/public/v1/preview/C/A/HS?' + q;
+function url(id, year) {
+  const q = { reporterCode: codes.join(','), period: String(year), partnerCode: '0', cmdCode: codeOf(id), flowCode: 'X' };
+  // The commodity database splits rows by second partner, customs procedure and
+  // mode of transport; the services database has none of those dimensions.
+  if (kindOf(id) === 'goods') Object.assign(q, { partner2Code: '0', customsCode: 'C00', motCode: '0' });
+  return endpoint(id) + '?' + new URLSearchParams(q);
 }
 
 (async () => {
-  const years = process.argv.slice(2).length ? process.argv.slice(2) : ['2022', '2023', '2024'];
-  for (const year of years) {
-    for (const [id, cmd] of Object.entries(CODES)) {
+  const cli = process.argv.slice(2).filter(a => /^\d{4}$/.test(a));
+  for (const id of Object.keys(MARKETS)) {
+    const years = cli.length ? cli : FETCH_YEARS[kindOf(id)];
+    for (const year of years) {
       const out = path.join(RAW, `${id}-${year}.json`);
       if (fs.existsSync(out)) { console.log(`skip  ${id} ${year}`); continue; }
       try {
-        const j = await get(url(cmd, year));
+        const j = await get(url(id, year));
         fs.writeFileSync(out, JSON.stringify(j.data || []));
         const n = new Set((j.data || []).map(d => d.reporterCode)).size;
         console.log(`ok    ${id} ${year}  ${(j.data || []).length} rows / ${n} reporters${j.count >= 500 ? '  ** HIT 500 CAP **' : ''}`);

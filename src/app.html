@@ -28,7 +28,7 @@
   --font-ui: 'IBM Plex Sans', 'Segoe UI', system-ui, -apple-system, sans-serif;
   --font-mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Consolas, monospace;
 
-  --rail-l: 250px;
+  --rail-l: 274px;
   --rail-r: 356px;
   color-scheme: dark;
 }
@@ -721,9 +721,11 @@ function paintPanel() {
   if (selected) head.innerHTML = dossierHTML(selected);
   else head.innerHTML = marketHeadHTML();
   paintBoard();
-  $('#foot').innerHTML = 'Reported goods exports to the world, ' + esc(META.year) + ', from ' + esc(META.source) +
-    ' (retrieved ' + esc(META.fetched) + '). Countries shown cover ' + market.covered + '% of the world total for this market; ' +
-    'the rest is a long tail of small exporters. Boundaries from Natural Earth.';
+  const src = META.sources[market.kind];
+  $('#foot').innerHTML = (market.kind === 'services' ? 'Services exports, ' : 'Reported goods exports to the world, ') +
+    esc(src.year) + ', from ' + esc(src.source) + ' (retrieved ' + esc(META.fetched) + '). ' +
+    'Countries shown cover ' + market.covered + '% of the world total for this market; the rest is a long tail of ' +
+    'small exporters. Boundaries from Natural Earth.';
   wirePanel();
 }
 
@@ -731,10 +733,12 @@ function marketHeadHTML() {
   const m = market, top = m.rows[0];
   const hubs = (m.hubs || []).map(h => (CO[h] || {}).name || h);
   return `<div class="phead">
-    <span class="eyebrow">${esc(m.hs)} · ${esc(m.unit)} · ${esc(m.year)} · ${m.reporters} reporting countries</span>
+    <span class="eyebrow">${esc(m.hs)} · ${esc(m.unit)} · ${esc(m.year)} · ${m.reporters} ${m.kind === 'services' ? 'economies with data' : 'reporting countries'}</span>
     <h2>${esc(m.name)}</h2>
     <p class="blurb">${esc(m.blurb)}</p>
-    ${hubs.length ? `<p class="hubnote"><b>Trades, not grows:</b> ${esc(hubs.join(', '))} rank here as re-exporters, refiners or processors rather than producers.</p>` : ''}
+    ${hubs.length ? (m.kind === 'services'
+      ? `<p class="hubnote"><b>Booked, not earned:</b> ${esc(hubs.join(', '))} rank here largely because income is registered in their jurisdiction, not because the work was done there.</p>`
+      : `<p class="hubnote"><b>Trades, not grows:</b> ${esc(hubs.join(', '))} rank here as re-exporters, refiners or processors rather than producers.</p>`) : ''}
     ${m.caveat ? `<p class="caveat">${esc(m.caveat)}</p>` : ''}
     ${m.rows.some(r => r.mirror) ? `<p class="hubnote"><b>EST</b> marks a mirror estimate: ${esc(m.rows.filter(r => r.mirror).map(r => (CO[r.iso] || {}).name || r.iso).join(', '))} file no trade data of their own, so the figure is what the rest of the world reports importing from them.</p>` : ''}
     <div class="stats">
@@ -763,7 +767,9 @@ function dossierHTML(iso) {
       <div><span class="eyebrow k">World share</span><span class="v hue">${fmtPct(r.share)}</span></div>
       <div><span class="eyebrow k">Vs. leader</span><span class="v">${r.rank === 1 ? '—' : (r.v / m.vmax).toFixed(2) + '×'}</span></div>
     </div>
-    ${isHub ? `<div class="hubflag"><b>Re-export hub</b> — moves ${esc(m.name.toLowerCase())} it does not produce</div>` : ''}
+    ${isHub ? (m.kind === 'services'
+      ? `<div class="hubflag"><b>Booking centre</b> — income registered here rather than earned here</div>`
+      : `<div class="hubflag"><b>Re-export hub</b> — moves ${esc(m.name.toLowerCase())} it does not produce</div>`) : ''}
     ${r.mirror ? `<div class="hubflag est"><b>Mirror estimate</b> — files no trade data, so this is what its customers report importing</div>` : ''}
     ${r.note ? `<p class="note">${esc(r.note)}</p>` : ''}`
     : `<p class="absent">No recorded exports of ${esc(m.name.toLowerCase())}.</p>`}
@@ -865,6 +871,7 @@ for (const m of MARKETS) {
   b.dataset.id = m.id;
   b.style.setProperty('--c', m.color);
   b.setAttribute('aria-pressed', 'false');
+  b.title = `${m.name} — ${fmtVal(m.total)} of world exports, ${m.year}`;
   b.innerHTML = `<span class="dot"></span><span class="nm">${esc(m.emoji)} ${esc(m.name)}</span><span class="sz">${fmtVal(m.total)}</span>`;
   b.onclick = () => setMarket(m, true);
   rail.appendChild(b);
