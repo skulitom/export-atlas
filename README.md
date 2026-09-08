@@ -16,6 +16,13 @@ No build step is needed to view it: `index.html` is a single self-contained file
 with the geometry and data embedded. Open it straight from disk and it works
 offline.
 
+On a phone the three-column shell becomes a single page: the header and the map
+pin to the top, the reading panel scrolls beneath them, and the market rail
+becomes a full-screen drawer opened from the button in the header. Tapping a
+country brings its dossier up directly under the map. The map is cropped to fill
+the screen rather than letterboxed, pans to its edges, and pinches out below 1×
+to show the whole world.
+
 ## The markets
 
 Eighty-seven, grouped in the rail and sorted largest-first inside each group:
